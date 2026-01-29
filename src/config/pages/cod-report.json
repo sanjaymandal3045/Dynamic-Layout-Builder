@@ -1,0 +1,38 @@
+{
+    "pageKey": "demo-report",
+    "title": "Demo Report",
+    "layout": {
+      "columns": 2
+    },
+    "api": {
+      "method": "post",
+      "url": "/demo-url"
+    },
+    "fields": [
+      {
+        "name": "demo-field-1",
+        "label": "Demo Field 1",
+        "type": "text",
+        "required": true,
+        "validation": {
+            "type":"string"
+        }
+      },
+      {
+        "name": "demo-field-2",
+        "label": "Demo Field 2",
+        "type": "text",
+        "required": false
+      }
+    ],
+    "actions": [
+      {
+        "type": "submit",
+        "label": "Submit"
+      }
+    ],
+    "response": {
+      "type": "table",
+      "dataKey": "data"
+    }
+  }

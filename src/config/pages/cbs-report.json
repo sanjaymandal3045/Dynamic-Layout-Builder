@@ -1,0 +1,81 @@
+{
+  "pageKey": "cbs-report",
+  "title": "CBS Report",
+  "description": "",
+  "sections": [
+    {
+      "id": 1768815659064,
+      "type": "section",
+      "name": "",
+      "layout": {
+        "columns": 1,
+        "gutter": 16
+      },
+      "components": [
+        {
+          "id": 1768815660952.9683,
+          "type": "field",
+          "label": "New Field",
+          "fieldType": "text",
+          "required": false
+        },
+        {
+          "id": 1768815662264.7827,
+          "type": "button",
+          "label": "Button",
+          "variant": "primary",
+          "onClick": "submit",
+          "api": {
+            "method": "post",
+            "url": ""
+          }
+        },
+        {
+          "id": 1768815664040.7446,
+          "type": "divider"
+        }
+      ]
+    },
+    {
+      "id": 1768815659423,
+      "type": "section",
+      "name": "",
+      "layout": {
+        "columns": 1,
+        "gutter": 16
+      },
+      "components": [
+        {
+          "id": 1768815667792.9006,
+          "type": "spacer",
+          "height": 16
+        },
+        {
+          "id": 1768815668599.735,
+          "type": "text",
+          "content": "Sample Text",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "id": 1768815669303.6055,
+          "type": "card",
+          "title": "Card Title",
+          "bordered": true,
+          "components": []
+        },
+        {
+          "id": 1768815669896.4019,
+          "type": "button",
+          "label": "Button",
+          "variant": "primary",
+          "onClick": "submit",
+          "api": {
+            "method": "post",
+            "url": ""
+          }
+        }
+      ]
+    }
+  ]
+}
