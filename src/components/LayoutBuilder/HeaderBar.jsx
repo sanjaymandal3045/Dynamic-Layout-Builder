@@ -24,7 +24,13 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
 
   const saveConfig = async () => {
     try {
-      const response = await saveConfigApi.post("/page-config", config);
+      const params = {
+        subChannelId: "2",
+        subServiceId: "8",
+        traceNo: "123",
+        attributes: config
+      };
+      const response = await saveConfigApi.post("/transaction/execute", params);
       if (response.success === true) {
         messageApi.success(response.message || "Configuration saved successfully");
       } else {

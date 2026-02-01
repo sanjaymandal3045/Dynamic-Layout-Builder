@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import {
   Select,
   Input,
@@ -27,6 +27,12 @@ const ComponentRenderer = ({
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [pageSize, setPageSize] = useState(10);
+
+  {
+    contextHolder;
+  }
 
   const dataTableApi = useApi();
 
@@ -62,7 +68,7 @@ const ComponentRenderer = ({
       const fetchTableData = async () => {
         setTableLoading(true);
         try {
-          console.log("Component",component)
+          console.log("Component", component);
           const menuParams = {
             subChannelId: component.tableApiCommon.subChannelId,
             subServiceId: component.tableApiCommon.subServiceId,
@@ -70,10 +76,7 @@ const ComponentRenderer = ({
             attributes: {},
           };
 
-          const res = await dataTableApi.post(
-            component.dataUrl,
-            menuParams,
-          );
+          const res = await dataTableApi.post(component.dataUrl, menuParams);
           console.log("res", res);
           if (res?.data) {
             const dynamicMenu = res.data.attributes.menuTree;
@@ -107,7 +110,7 @@ const ComponentRenderer = ({
           setApiData(mockData);
         } catch (error) {
           console.error("Failed to fetch table data", error);
-          message.error("Failed to load table data");
+          messageApi.error("Failed to load table data");
         } finally {
           setTableLoading(false);
         }
@@ -152,6 +155,42 @@ const ComponentRenderer = ({
 
   switch (component.type) {
     case "field":
+      const handleFieldBlur = async () => {
+        if (component.onBlurApi?.enabled && component.onBlurApi?.url) {
+          try {
+            const payload = {
+              subChannelId: component.onBlurApi?.apiCommon?.subChannelId,
+              subServiceId: component.onBlurApi?.apiCommon?.subServiceId,
+              traceNo: component.onBlurApi?.apiCommon?.traceNo,
+              attributes: {
+                [component.name]: value,
+              },
+            };
+
+            const response = await dataTableApi.post(
+              component.onBlurApi.url,
+              payload,
+            );
+
+            if (response?.data) {
+              // Map API response fields to form fields
+              component.onBlurApi.fieldMappings?.forEach((mapping) => {
+                const apiValue =
+                  response.data.attributes?.[mapping.apiResponseField] ||
+                  response.data?.[mapping.apiResponseField];
+                if (apiValue !== undefined) {
+                  onValueChange(mapping.targetFieldName, apiValue);
+                }
+              });
+              messageApi.success("Data fetched successfully");
+            }
+          } catch (error) {
+            console.error("onBlur API call failed:", error);
+            messageApi.error("Failed to fetch data on blur");
+          }
+        }
+      };
+
       return (
         <div style={gridColumnStyle}>
           {renderWrapper(
@@ -165,6 +204,7 @@ const ComponentRenderer = ({
                 placeholder={component.placeholder}
                 value={value || ""}
                 onChange={(e) => onValueChange(component.name, e.target.value)}
+                onBlur={handleFieldBlur}
                 className="rounded-md"
                 disabled={disabled}
               />
@@ -237,7 +277,9 @@ const ComponentRenderer = ({
           {renderWrapper(
             <Button
               {...buttonProps}
-              onClick={onBtnClick}
+              onClick={() => {
+                onBtnClick();
+              }}
               disabled={disabled}
               className={`h-10 px-6 font-medium shadow-sm transition-all duration-200 ${buttonProps.className}`}
             >
@@ -356,7 +398,7 @@ const ComponentRenderer = ({
                   size="small"
                   icon={<DeleteOutlined />}
                   onClick={() => {
-                    message.info("Delete functionality to be implemented");
+                    messageApi.info("Delete functionality to be implemented");
                   }}
                 />
               )}
@@ -385,20 +427,26 @@ const ComponentRenderer = ({
             dataSource={tableData}
             loading={tableLoading}
             pagination={
-              component.pagination !== false
-                ? {
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showTotal: (total) => `Total ${total} records`,
-                  }
-                : false
-            }
+                component.pagination !== false
+                  ? {
+                      pageSize: pageSize,
+                      showSizeChanger: true,
+                      pageSizeOptions: ["2", "10", "20", "50", "100"],
+                      showTotal: (total) => `Total ${total} records`,
+                      onChange: (page, size) => setPageSize(size),
+                      onShowSizeChange: (current, size) => setPageSize(size),
+                    }
+                  : false
+              }
             rowKey={(record) => record.id || Math.random()}
             size="small"
             scroll={{ x: true }}
             className="rounded-lg border border-slate-200 shadow-sm"
-            style={{ width: "100%" }}
-            expandable={false}
+            style={{ width: "100%", padding: "10px" }}
+            expandable={{
+              expandedRowRender: undefined,
+              showExpandColumn: false,
+            }}
           />
         </div>
       );

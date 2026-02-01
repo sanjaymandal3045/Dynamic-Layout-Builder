@@ -47,6 +47,25 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
       if (!formData.name)
         newErrors.name = "Field Name is required for data mapping";
       if (!formData.label) newErrors.label = "Display Label is required";
+
+      // Validate onBlur API if enabled
+      if (formData.onBlurApi?.enabled) {
+        if (!formData.onBlurApi?.url) {
+          newErrors.onBlurApiUrl = "API URL is required for onBlur";
+        }
+        if (!formData.onBlurApi?.apiCommon?.subChannelId) {
+          newErrors.onBlurSubChannelId = "Sub Channel ID is required";
+        }
+        if (!formData.onBlurApi?.apiCommon?.subServiceId) {
+          newErrors.onBlurSubServiceId = "Sub Service ID is required";
+        }
+        if (!formData.onBlurApi?.apiCommon?.traceNo) {
+          newErrors.onBlurTraceNo = "Trace No is required";
+        }
+        if (!formData.onBlurApi?.fieldMappings || formData.onBlurApi.fieldMappings.length === 0) {
+          newErrors.onBlurFieldMappings = "At least one field mapping is required";
+        }
+      }
     }
     if (formData.type === "button") {
       if (!formData.label) newErrors.label = "Button text is required";
@@ -236,6 +255,286 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                 Mark as Required
               </Checkbox>
             </div>
+
+            <Divider />
+
+            {/* API Configuration for onBlur */}
+            <div className="flex items-center mb-4">
+              <Checkbox
+                checked={formData.onBlurApi?.enabled}
+                onChange={(e) =>
+                  updateField("onBlurApi", {
+                    ...formData.onBlurApi,
+                    enabled: e.target.checked,
+                  })
+                }
+              >
+                Enable onBlur API Call
+              </Checkbox>
+            </div>
+
+            {formData.onBlurApi?.enabled && (
+              <>
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-4">
+                  <p className="text-xs text-blue-700 mb-3">
+                    When user leaves this field, an API will be called and response data can populate other fields.
+                  </p>
+
+                  {/* API Endpoint */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-slate-700">
+                      API Endpoint URL <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      status={errors.onBlurApiUrl ? "error" : ""}
+                      value={formData.onBlurApi?.url || ""}
+                      onChange={(e) =>
+                        updateField("onBlurApi", {
+                          ...formData.onBlurApi,
+                          url: e.target.value,
+                        })
+                      }
+                      placeholder="/api/validate"
+                      size="large"
+                    />
+                    {errors.onBlurApiUrl && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.onBlurApiUrl}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* HTTP Method */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-slate-700">
+                      HTTP Method
+                    </label>
+                    <Select
+                      popupMatchSelectWidth={false}
+                      value={formData.onBlurApi?.method || "post"}
+                      options={[
+                        { value: "get", label: "GET" },
+                        { value: "post", label: "POST" },
+                      ]}
+                      onChange={(v) =>
+                        updateField("onBlurApi", {
+                          ...formData.onBlurApi,
+                          method: v,
+                        })
+                      }
+                      size="large"
+                    />
+                  </div>
+
+                  <Divider />
+
+                  {/* Sub Channel ID */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-slate-700">
+                      Sub Channel ID <span className="text-red-500">*</span>
+                    </label>
+                    <Select
+                      status={errors.onBlurSubChannelId ? "error" : ""}
+                      popupMatchSelectWidth={false}
+                      value={formData.onBlurApi?.apiCommon?.subChannelId}
+                      options={SUBCHANNEL_OPTIONS}
+                      onChange={(v) =>
+                        updateField("onBlurApi", {
+                          ...formData.onBlurApi,
+                          apiCommon: {
+                            ...formData.onBlurApi?.apiCommon,
+                            subChannelId: v,
+                          },
+                        })
+                      }
+                      placeholder="Select a channel"
+                      size="large"
+                    />
+                    {errors.onBlurSubChannelId && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.onBlurSubChannelId}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Sub Service ID */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-slate-700">
+                      Sub Service ID <span className="text-red-500">*</span>
+                    </label>
+                    <Select
+                      status={errors.onBlurSubServiceId ? "error" : ""}
+                      popupMatchSelectWidth={false}
+                      value={formData.onBlurApi?.apiCommon?.subServiceId}
+                      options={SUBSERVICE_OPTIONS}
+                      onChange={(v) =>
+                        updateField("onBlurApi", {
+                          ...formData.onBlurApi,
+                          apiCommon: {
+                            ...formData.onBlurApi?.apiCommon,
+                            subServiceId: v,
+                          },
+                        })
+                      }
+                      placeholder="Select a service"
+                      size="large"
+                    />
+                    {errors.onBlurSubServiceId && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.onBlurSubServiceId}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Trace No */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-slate-700">
+                      Trace No <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      status={errors.onBlurTraceNo ? "error" : ""}
+                      value={formData.onBlurApi?.apiCommon?.traceNo || ""}
+                      onChange={(e) =>
+                        updateField("onBlurApi", {
+                          ...formData.onBlurApi,
+                          apiCommon: {
+                            ...formData.onBlurApi?.apiCommon,
+                            traceNo: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="e.g. REQ-VALIDATE-FIELD"
+                      size="large"
+                    />
+                    {errors.onBlurTraceNo && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.onBlurTraceNo}
+                      </p>
+                    )}
+                  </div>
+
+                  <Divider />
+
+                  {/* Field Mapping */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-semibold text-slate-700">
+                        Field Mappings
+                      </label>
+                      <Button
+                        type="dashed"
+                        size="small"
+                        icon={<PlusOutlined />}
+                        onClick={() => {
+                          const newMapping = {
+                            id: Date.now(),
+                            apiResponseField: "",
+                            targetFieldName: "",
+                          };
+                          updateField("onBlurApi", {
+                            ...formData.onBlurApi,
+                            fieldMappings: [
+                              ...(formData.onBlurApi?.fieldMappings || []),
+                              newMapping,
+                            ],
+                          });
+                        }}
+                      >
+                        Add Mapping
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {formData.onBlurApi?.fieldMappings?.map(
+                        (mapping, index) => (
+                          <div
+                            key={mapping.id}
+                            className="p-3 bg-white rounded border border-slate-200 space-y-2"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-semibold text-slate-500">
+                                Mapping {index + 1}
+                              </span>
+                              <Button
+                                type="text"
+                                danger
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                onClick={() => {
+                                  const updated = formData.onBlurApi?.fieldMappings?.filter(
+                                    (_, i) => i !== index
+                                  );
+                                  updateField("onBlurApi", {
+                                    ...formData.onBlurApi,
+                                    fieldMappings: updated,
+                                  });
+                                }}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-semibold text-slate-600">
+                                API Response Field Name
+                              </label>
+                              <Input
+                                size="small"
+                                placeholder="e.g. customerName"
+                                value={mapping.apiResponseField || ""}
+                                onChange={(e) => {
+                                  const updated =
+                                    formData.onBlurApi?.fieldMappings?.map(
+                                      (m, i) =>
+                                        i === index
+                                          ? {
+                                              ...m,
+                                              apiResponseField:
+                                                e.target.value,
+                                            }
+                                          : m
+                                    );
+                                  updateField("onBlurApi", {
+                                    ...formData.onBlurApi,
+                                    fieldMappings: updated,
+                                  });
+                                }}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-semibold text-slate-600">
+                                Target Field Name (form field to populate)
+                              </label>
+                              <Input
+                                size="small"
+                                placeholder="e.g. field_1234567890"
+                                value={mapping.targetFieldName || ""}
+                                onChange={(e) => {
+                                  const updated =
+                                    formData.onBlurApi?.fieldMappings?.map(
+                                      (m, i) =>
+                                        i === index
+                                          ? {
+                                              ...m,
+                                              targetFieldName:
+                                                e.target.value,
+                                            }
+                                          : m
+                                    );
+                                  updateField("onBlurApi", {
+                                    ...formData.onBlurApi,
+                                    fieldMappings: updated,
+                                  });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -608,63 +907,6 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
               )}
             </div>
 
-            {/* Sub Channel ID */}
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-slate-700">
-                Sub Channel ID <span className="text-red-500">*</span>
-              </label>
-              <Select
-                status={errors.subChannelId ? "error" : ""}
-                popupMatchSelectWidth={false}
-                value={formData.tableApiCommon?.subChannelId}
-                options={SUBCHANNEL_OPTIONS}
-                onChange={(v) => updateTableApiCommonField("subChannelId", v)}
-                placeholder="Select a channel"
-                size="large"
-              />
-              {errors.subChannelId && (
-                <p className="text-red-500 text-xs mt-1">{errors.subChannelId}</p>
-              )}
-            </div>
-
-            {/* Sub Service ID */}
-            <div className="mt-4">
-              <label className="block text-sm font-semibold mb-2 text-slate-700">
-                Sub Service ID <span className="text-red-500">*</span>
-              </label>
-              <Select
-                status={errors.subServiceId ? "error" : ""}
-                popupMatchSelectWidth={false}
-                value={formData.tableApiCommon?.subServiceId}
-                options={SUBSERVICE_OPTIONS}
-                onChange={(v) => updateTableApiCommonField("subServiceId", v)}
-                placeholder="Select a service"
-                size="large"
-              />
-              {errors.subServiceId && (
-                <p className="text-red-500 text-xs mt-1">{errors.subServiceId}</p>
-              )}
-            </div>
-
-            {/* Trace No */}
-            <div className="mt-4">
-              <label className="block text-sm font-semibold text-slate-700">
-                Trace No <span className="text-red-500">*</span>
-              </label>
-              <Input
-                status={errors.traceNo ? "error" : ""}
-                value={formData.tableApiCommon?.traceNo || ""}
-                onChange={(e) =>
-                  updateTableApiCommonField("traceNo", e.target.value)
-                }
-                placeholder="e.g. REQ-GET-RECORDS"
-                size="large"
-              />
-              {errors.traceNo && (
-                <p className="text-red-500 text-xs mt-1">{errors.traceNo}</p>
-              )}
-            </div>
-
             {/* Pagination */}
             <div className="flex items-center">
               <Checkbox
@@ -814,6 +1056,68 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
             </div>
 
             <Divider />
+
+            {/* API Configuration Section */}
+            <h4 className="font-semibold mb-4 text-slate-800">
+              API Configuration
+            </h4>
+
+            {/* Sub Channel ID */}
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Sub Channel ID <span className="text-red-500">*</span>
+              </label>
+              <Select
+                status={errors.subChannelId ? "error" : ""}
+                popupMatchSelectWidth={false}
+                value={formData.tableApiCommon?.subChannelId}
+                options={SUBCHANNEL_OPTIONS}
+                onChange={(v) => updateTableApiCommonField("subChannelId", v)}
+                placeholder="Select a channel"
+                size="large"
+              />
+              {errors.subChannelId && (
+                <p className="text-red-500 text-xs mt-1">{errors.subChannelId}</p>
+              )}
+            </div>
+
+            {/* Sub Service ID */}
+            <div className="mt-4">
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Sub Service ID <span className="text-red-500">*</span>
+              </label>
+              <Select
+                status={errors.subServiceId ? "error" : ""}
+                popupMatchSelectWidth={false}
+                value={formData.tableApiCommon?.subServiceId}
+                options={SUBSERVICE_OPTIONS}
+                onChange={(v) => updateTableApiCommonField("subServiceId", v)}
+                placeholder="Select a service"
+                size="large"
+              />
+              {errors.subServiceId && (
+                <p className="text-red-500 text-xs mt-1">{errors.subServiceId}</p>
+              )}
+            </div>
+
+            {/* Trace No */}
+            <div className="mt-4">
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Trace No <span className="text-red-500">*</span>
+              </label>
+              <Input
+                status={errors.traceNo ? "error" : ""}
+                value={formData.tableApiCommon?.traceNo || ""}
+                onChange={(e) =>
+                  updateTableApiCommonField("traceNo", e.target.value)
+                }
+                placeholder="e.g. REQ-GET-RECORDS"
+                size="large"
+              />
+              {errors.traceNo && (
+                <p className="text-red-500 text-xs mt-1">{errors.traceNo}</p>
+              )}
+            </div>
           </>
         )}
 

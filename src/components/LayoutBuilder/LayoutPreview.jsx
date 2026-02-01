@@ -198,11 +198,11 @@ const LayoutPreview = ({
     key: tab.id.toString(),
     label: tab.title,
     children: (
-      <div className="p-6">
+      <div className="p-2">
         {tab.sections.map((section) => (
           <div
             key={section.id}
-            className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-slate-100"
+            className="mb-3 bg-white p-6 rounded-xl shadow-sm border border-slate-100"
           >
             <h3 className="text-lg font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2">
               {section.name}
@@ -288,7 +288,7 @@ const LayoutPreview = ({
   return (
     <>
       {contextHolder}
-      <div className="min-h-screen bg-slate-50 p-8 font-sans text-slate-900">
+      <div>
         {!hideBackButton && (
           <Button
             onClick={onBack}
@@ -300,8 +300,8 @@ const LayoutPreview = ({
           </Button>
         )}
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight mb-2">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
             {config.title}
           </h1>
           {config.description && (
@@ -313,7 +313,7 @@ const LayoutPreview = ({
           <Tabs
             items={tabItems}
             type="line"
-            className="px-6 py-6 pt-4"
+            className=""
             disabled={isSubmitting}
             tabBarStyle={{ marginBottom: 0 }}
           />

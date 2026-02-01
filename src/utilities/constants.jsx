@@ -143,7 +143,7 @@ export const COMPONENT_TYPES = {
   BUTTON: "button",
   DIVIDER: "divider",
   SPACER: "spacer",
-  CARD: "card",
+  // CARD: "card",
   NEWLINE: "newline",
   SELECT: "select",
   TABLE: "table",

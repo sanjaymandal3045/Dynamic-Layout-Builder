@@ -82,7 +82,6 @@ const DynamicPageLoader = ({ pageKey }) => {
       config={config}
       formValues={formValues}
       onValueChange={handleValueChange}
-      // Hide back button in dashboard mode if preferred
       onBack={() => console.log("Back not applicable in dashboard")}
       hideBackButton={true}
     />
