@@ -76,7 +76,7 @@ const LayoutBuilder = () => {
   const onTabEdit = (targetKey, action) => {
     if (action === "add") {
       dispatch(addTab());
-      // Set active to the newly created tab
+      // Set active to the newly created tab.
       setTimeout(() => {
         const lastTab = config.tabs[config.tabs.length - 1];
         if (lastTab) setActiveTabKey(lastTab.id.toString());
