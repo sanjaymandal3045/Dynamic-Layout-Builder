@@ -56,6 +56,7 @@ const Dashboard = () => {
         <div
           style={{
             padding: 4,
+            marginTop: 10,
             background: "#fff",
             borderRadius: 8,
             boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
@@ -276,7 +277,7 @@ const Dashboard = () => {
             </Space>
           </Header>
 
-          <Content style={{ margin: "0px 10px", minHeight: 280 }}>
+          <Content style={{ margin: "0px 10px 10px 10px", minHeight: 280 }}>
             <div
             // style={{
             //   padding: 4,

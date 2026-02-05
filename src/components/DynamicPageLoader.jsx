@@ -18,7 +18,7 @@ const DynamicPageLoader = ({ pageKey }) => {
         const menuParams = {
           subChannelId: "2",
           subServiceId: "9",
-          traceNo: "1234567890",
+          traceNo: "",
           attributes: {
             pageKey: pageKey,
           },
@@ -28,10 +28,10 @@ const DynamicPageLoader = ({ pageKey }) => {
           menuParams,
         );
 
-        if (res.data) {
+        if (res?.data) {
           const rawConfig = res.data.attributes.pageConfig;
 
-          let finalSections = rawConfig.sections || [];
+          let finalSections = rawConfig?.sections || [];
           if (
             typeof rawConfig.sections === "string" &&
             finalSections.length === 0
@@ -74,7 +74,7 @@ const DynamicPageLoader = ({ pageKey }) => {
   }
 
   if (!config) {
-    return <Empty description="Page Configuration not found" />;
+    return <Empty style={{marginTop:"100px"}} description="Page Configuration not found" />;
   }
 
   return (

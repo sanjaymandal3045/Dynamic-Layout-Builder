@@ -1,4 +1,4 @@
-import { BankOutlined } from "@ant-design/icons";
+import { BankOutlined, MenuOutlined } from "@ant-design/icons";
 import { Menu } from "lucide-react";
 
 export const nullChecker = (val) => {
@@ -60,45 +60,46 @@ export const nullChecker = (val) => {
 
 // Helper function to build menu tree from flat menu list
 export const buildMenuTree = (menuList) => {
-  // Create a map for quick lookup
-  const menuMap = {};
-  const rootMenus = [];
+  // Transform the already-structured menu tree from API
+  const transformMenu = (menus) => {
+    return menus
+      .sort((a, b) => a.priorityId - b.priorityId)
+      .map((menu) => {
+        const item = {
+          key: menu.menuAlias,
+          label: menu.menuName,
+          icon: menu.parentId === 0 ? <BankOutlined /> : <MenuOutlined size={16} />,
+        };
+        
+        // If menu has children, recursively transform them
+        if (menu.children && menu.children.length > 0) {
+          item.children = transformMenu(menu.children);
+        }
+        
+        return item;
+      });
+  };
 
-  // First pass: create all menu items
-  menuList.forEach((menu) => {
-    menuMap[menu.id] = {
-      key: menu.menuAlias,
-      label: menu.menuName,
-      icon: menu.parentId === 0 ? <BankOutlined /> : <Menu size={16} />,
-      children: [],
-    };
-  });
+  return transformMenu(menuList);
 
-  // Second pass: build parent-child relationships
-  menuList.forEach((menu) => {
-    if (menu.parentId === 0) {
-      // Root level menu
-      rootMenus.push(menuMap[menu.id]);
-    } else {
-      // Child menu - add to parent's children array
-      if (menuMap[menu.parentId]) {
-        menuMap[menu.parentId].children.push(menuMap[menu.id]);
-      }
-    }
-  });
-
-  // Sort by priorityId and remove empty children arrays
+  // Sort by priorityId and clean up structure
   const sortMenu = (menus) => {
     return menus
       .sort((a, b) => a.priorityId - b.priorityId)
-      .map((menu) => ({
-        key: menu.key,
-        label: menu.label,
-        icon: menu.icon,
-        children:
-          menu.children.length > 0 ? sortMenu(menu.children) : undefined,
-      }))
-      .filter((menu) => menu.children || !menu.children); // Remove undefined children
+      .map((menu) => {
+        const item = {
+          key: menu.key,
+          label: menu.label,
+          icon: menu.icon,
+        };
+        
+        // Only add children if it has children
+        if (menu.children && menu.children.length > 0) {
+          item.children = sortMenu(menu.children);
+        }
+        
+        return item;
+      });
   };
 
   return sortMenu(rootMenus);
