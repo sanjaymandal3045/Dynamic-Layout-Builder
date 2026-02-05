@@ -51,9 +51,11 @@ const ComponentsList = ({
         fontSize: 16,
         fontWeight: "normal",
       },
+      // ✅ UPDATED: Button now has name field
       button: {
         id,
         type,
+        name: `button_${id}`,  // ← Auto-generated button name
         label: "Button",
         variant: "primary",
         onClick: "submit",
@@ -84,9 +86,11 @@ const ComponentsList = ({
           { label: "Option 2", value: "val2" },
         ],
       },
+      // ✅ UPDATED: Table now has name field
       table: {
         id,
         type,
+        name: `table_${id}`,  // ← Auto-generated table name
         label: "Data Table",
         dataUrl: "",
         pagination: true,
@@ -118,10 +122,17 @@ const ComponentsList = ({
           subServiceId: null,
           traceNo: "",
         },
+        triggerButtonName: [],  // ← New: Store button names that trigger this table
       },
     };
 
     onAddComponent(componentTemplates[type]);
+  };
+
+  // Apply gutter spacing from section layout
+  const gutter = section?.layout?.gutter || 8;
+  const gutterStyle = {
+    gap: `${gutter}px`,
   };
 
   return (
@@ -137,7 +148,7 @@ const ComponentsList = ({
           </Tag>
         </div>
 
-        <div className="space-y-2">
+        <div style={gutterStyle} className="flex flex-col">
           {section.components.length > 0 ? (
             section.components.map((component, index) => (
               <ComponentItem

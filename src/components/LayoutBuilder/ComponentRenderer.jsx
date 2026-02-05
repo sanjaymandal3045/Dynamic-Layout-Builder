@@ -22,6 +22,7 @@ const ComponentRenderer = ({
   onBtnClick,
   onRowAction,
   disabled,
+  refreshTrigger,
 }) => {
   const [apiData, setApiData] = useState([]);
   const [tableData, setTableData] = useState([]);
@@ -65,60 +66,61 @@ const ComponentRenderer = ({
   // Fetch table data
   useEffect(() => {
     if (component.type === "table" && component.dataUrl) {
-      const fetchTableData = async () => {
-        setTableLoading(true);
-        try {
-          console.log("Component", component);
-          const menuParams = {
-            subChannelId: component.tableApiCommon.subChannelId,
-            subServiceId: component.tableApiCommon.subServiceId,
-            traceNo: component.tableApiCommon.traceNo,
-            attributes: {},
-          };
-
-          const res = await dataTableApi.post(component.dataUrl, menuParams);
-          console.log("res", res);
-          if (res?.data) {
-            const dynamicMenu = res.data.attributes.menuTree;
-            setTableData(dynamicMenu);
-          }
-
-          // Mock table data - replace with actual API call
-          const mockData = [
-            {
-              id: 1,
-              userName: "John Doe",
-              email: "john@example.com",
-              status: "active",
-              createdAt: "2024-01-15",
-            },
-            {
-              id: 2,
-              userName: "Jane Smith",
-              email: "jane@example.com",
-              status: "inactive",
-              createdAt: "2024-01-16",
-            },
-            {
-              id: 3,
-              userName: "Bob Johnson",
-              email: "bob@example.com",
-              status: "active",
-              createdAt: "2024-01-17",
-            },
-          ];
-          setApiData(mockData);
-        } catch (error) {
-          console.error("Failed to fetch table data", error);
-          messageApi.error("Failed to load table data");
-        } finally {
-          setTableLoading(false);
-        }
-      };
-
       fetchTableData();
     }
-  }, [component.dataUrl, component.type]);
+  }, [component.dataUrl, component.type, refreshTrigger]);
+
+  // Function to fetch table data
+  const fetchTableData = async () => {
+    setTableLoading(true);
+    try {
+      console.log("Component", component);
+      const menuParams = {
+        subChannelId: component.tableApiCommon.subChannelId,
+        subServiceId: component.tableApiCommon.subServiceId,
+        traceNo: component.tableApiCommon.traceNo,
+        attributes: {},
+      };
+
+      const res = await dataTableApi.post(component.dataUrl, menuParams);
+      console.log("res", res);
+      if (res?.data) {
+        const dynamicMenu = res.data.attributes.menuTree;
+        setTableData(dynamicMenu);
+      }
+
+      // Mock table data - replace with actual API call
+      const mockData = [
+        {
+          id: 1,
+          userName: "John Doe",
+          email: "john@example.com",
+          status: "active",
+          createdAt: "2024-01-15",
+        },
+        {
+          id: 2,
+          userName: "Jane Smith",
+          email: "jane@example.com",
+          status: "inactive",
+          createdAt: "2024-01-16",
+        },
+        {
+          id: 3,
+          userName: "Bob Johnson",
+          email: "bob@example.com",
+          status: "active",
+          createdAt: "2024-01-17",
+        },
+      ];
+      setApiData(mockData);
+    } catch (error) {
+      console.error("Failed to fetch table data", error);
+      messageApi.error("Failed to load table data");
+    } finally {
+      setTableLoading(false);
+    }
+  };
 
   // Get layout values
   const offset = component.layout?.offset || 0;

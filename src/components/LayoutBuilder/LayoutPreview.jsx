@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Button, message, Tabs } from "antd";
 import { ArrowLeft } from "lucide-react";
 import ComponentRenderer from "./ComponentRenderer";
@@ -14,19 +14,14 @@ const LayoutPreview = ({
   const [messageApi, contextHolder] = message.useMessage();
   const apiHandler = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tableRefreshTriggers, setTableRefreshTriggers] = useState({});
 
-  /**
-   * Handles row selection from a table component
-   * Maps table row data to form fields based on column configuration
-   */
   const handleTableRowAction = (tableComponent, rowData) => {
     if (tableComponent.rowActions?.showSelect) {
-      // Map each column's dataIndex to the form field name
       const mappedValues = {};
       let hasMapping = false;
 
       (tableComponent.columns || []).forEach((column) => {
-        // Only map if the column has a linked form field name
         if (column.name) {
           const rowValue = rowData[column.dataIndex];
           if (rowValue !== undefined) {
@@ -38,19 +33,14 @@ const LayoutPreview = ({
 
       if (!hasMapping) {
         messageApi.warning(
-          "No field mappings configured for this table. Please configure column mappings in the table settings."
+          "No field mappings configured for this table. Please configure column mappings in the table settings.",
         );
         return;
       }
 
-      // Update form values with row data
       Object.entries(mappedValues).forEach(([fieldName, fieldValue]) => {
         onValueChange(fieldName, fieldValue);
       });
-
-      // messageApi.success(
-      //   `Populated ${Object.keys(mappedValues).length} field(s) with selected row data`
-      // );
     }
   };
 
@@ -103,8 +93,14 @@ const LayoutPreview = ({
       return;
     }
 
-    if (!apiCommon?.subChannelId || !apiCommon?.subServiceId || !apiCommon?.traceNo) {
-      messageApi.error("API configuration is incomplete. Please configure all required fields.");
+    if (
+      !apiCommon?.subChannelId ||
+      !apiCommon?.subServiceId ||
+      !apiCommon?.traceNo
+    ) {
+      messageApi.error(
+        "API configuration is incomplete. Please configure all required fields.",
+      );
       return;
     }
 
@@ -150,8 +146,37 @@ const LayoutPreview = ({
 
       if (result) {
         messageApi.success(
-          apiConfig.successMessage || "Action completed successfully!"
+          apiConfig.successMessage || "Action completed successfully!",
         );
+        
+        // ✅ Trigger table refresh using triggerButtonName
+        if (buttonComponent.name) {
+          const tablesToRefresh = [];
+          config?.tabs?.forEach((tab) => {
+            tab.sections?.forEach((section) => {
+              section.components
+                ?.filter(
+                  (c) =>
+                    c.type === "table" &&
+                    c.triggerButtonName === buttonComponent.name,
+                )
+                .forEach((table) => {
+                  tablesToRefresh.push(table);
+                });
+            });
+          });
+
+          if (tablesToRefresh.length > 0) {
+            tablesToRefresh.forEach((table) => {
+              setTableRefreshTriggers((prev) => ({
+                ...prev,
+                [table.name]: Date.now(),
+              }));
+            });
+
+            messageApi.info(`Refreshing ${tablesToRefresh.length} table(s)...`);
+          }
+        }
 
         if (apiConfig.resetFormOnSuccess) {
           Object.keys(attributesPayload).forEach((key) => {
@@ -165,15 +190,14 @@ const LayoutPreview = ({
 
         return result;
       } else {
-        const errorMsg =
-          apiConfig.errorMessage || "Failed to execute action.";
+        const errorMsg = apiConfig.errorMessage || "Failed to execute action.";
         messageApi.error(errorMsg);
       }
     } catch (err) {
       hideLoading();
       console.error("API call error:", err);
       messageApi.error(
-        apiConfig.errorMessage || "An unexpected error occurred."
+        apiConfig.errorMessage || "An unexpected error occurred.",
       );
     } finally {
       setIsSubmitting(false);
@@ -186,8 +210,12 @@ const LayoutPreview = ({
         {contextHolder}
         <div className="min-h-screen bg-slate-50 p-8 flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">No Configuration Found</h2>
-            <p className="text-slate-500">Please check back later or contact support.</p>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+              No Configuration Found
+            </h2>
+            <p className="text-slate-500">
+              Please check back later or contact support.
+            </p>
           </div>
         </div>
       </>
@@ -208,10 +236,63 @@ const LayoutPreview = ({
               {section.name}
             </h3>
 
-            <div className="w-full" style={{ display: 'flex', flexDirection: 'column', gap: `${section.layout.gutter}px` }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: `${section.layout.gutter}px`,
+              }}
+            >
               {section.components.map((c, index) => {
-                // Render divider, table, and newline full-width
-                if (c.type === "divider" || c.type === "table" || c.type === "newline") {
+                if (c.type === "button") {
+                  const prevComponent =
+                    index > 0 ? section.components[index - 1] : null;
+                  const isNewButtonGroup =
+                    !prevComponent || prevComponent.type !== "button";
+
+                  if (isNewButtonGroup) {
+                    const buttonComponents = [];
+                    for (let i = index; i < section.components.length; i++) {
+                      const comp = section.components[i];
+                      if (comp.type !== "button") {
+                        break;
+                      }
+                      buttonComponents.push(comp);
+                    }
+
+                    if (buttonComponents[0].id === c.id) {
+                      return (
+                        <div
+                          key={`button-group-${index}`}
+                          className="w-full flex justify-center"
+                          style={{ gap: `${section.layout.gutter}px` }}
+                        >
+                          {buttonComponents.map((btnComp) => (
+                            <ComponentRenderer
+                              key={btnComp.id}
+                              component={btnComp}
+                              value={formValues[btnComp.name]}
+                              onValueChange={onValueChange}
+                              onBtnClick={() => handleAction(section, btnComp)}
+                              onRowAction={(tableComp, rowData) =>
+                                handleTableRowAction(tableComp, rowData)
+                              }
+                              disabled={isSubmitting}
+                            />
+                          ))}
+                        </div>
+                      );
+                    }
+                  }
+
+                  return null;
+                }
+
+                if (
+                  c.type === "divider" ||
+                  c.type === "table" ||
+                  c.type === "newline"
+                ) {
                   return (
                     <div key={c.id} className="w-full">
                       <ComponentRenderer
@@ -222,36 +303,49 @@ const LayoutPreview = ({
                         onRowAction={(tableComp, rowData) =>
                           handleTableRowAction(tableComp, rowData)
                         }
+                        refreshTrigger={tableRefreshTriggers[c.name]}
                         disabled={isSubmitting}
                       />
                     </div>
                   );
                 }
-                
-                // Group consecutive non-full-width components
-                if (c.type !== "divider" && c.type !== "table" && c.type !== "newline") {
-                  // Check if this is the start of a new grid group
-                  const prevComponent = index > 0 ? section.components[index - 1] : null;
-                  const isNewGridGroup = !prevComponent || prevComponent.type === "divider" || prevComponent.type === "table" || prevComponent.type === "newline";
-                  
+
+                if (
+                  c.type !== "divider" &&
+                  c.type !== "table" &&
+                  c.type !== "newline" &&
+                  c.type !== "button"
+                ) {
+                  const prevComponent =
+                    index > 0 ? section.components[index - 1] : null;
+                  const isNewGridGroup =
+                    !prevComponent ||
+                    prevComponent.type === "divider" ||
+                    prevComponent.type === "table" ||
+                    prevComponent.type === "newline" ||
+                    prevComponent.type === "button";
+
                   if (isNewGridGroup) {
-                    // Collect all consecutive non-full-width components from this point
                     const gridComponents = [];
                     for (let i = index; i < section.components.length; i++) {
                       const comp = section.components[i];
-                      if (comp.type === "divider" || comp.type === "table" || comp.type === "newline") {
+                      if (
+                        comp.type === "divider" ||
+                        comp.type === "table" ||
+                        comp.type === "newline" ||
+                        comp.type === "button"
+                      ) {
                         break;
                       }
                       gridComponents.push(comp);
                     }
-                    
-                    // Only render on the first component of the group
+
                     if (gridComponents[0].id === c.id) {
                       return (
                         <div
                           key={`grid-${index}`}
-                          className="grid w-full"
                           style={{
+                            display: "grid",
                             gridTemplateColumns: `repeat(${section.layout.columns}, 1fr)`,
                             gap: `${section.layout.gutter}px`,
                           }}
@@ -262,7 +356,9 @@ const LayoutPreview = ({
                                 component={gridComp}
                                 value={formValues[gridComp.name]}
                                 onValueChange={onValueChange}
-                                onBtnClick={() => handleAction(section, gridComp)}
+                                onBtnClick={() =>
+                                  handleAction(section, gridComp)
+                                }
                                 onRowAction={(tableComp, rowData) =>
                                   handleTableRowAction(tableComp, rowData)
                                 }
@@ -275,7 +371,7 @@ const LayoutPreview = ({
                     }
                   }
                 }
-                
+
                 return null;
               })}
             </div>

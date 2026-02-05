@@ -29,7 +29,7 @@ const SUBSERVICE_OPTIONS = [
   { label: "Service 7", value: 7 },
 ];
 
-const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
+const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => {
   const [formData, setFormData] = useState(component || {});
   const [errors, setErrors] = useState({});
 
@@ -68,6 +68,8 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
       }
     }
     if (formData.type === "button") {
+      // ✅ NEW: Button name validation
+      if (!formData.name) newErrors.name = "Button Name is required for binding";
       if (!formData.label) newErrors.label = "Button text is required";
 
       // Validate API fields only if action is not "reset"
@@ -87,6 +89,8 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
       }
     }
     if (formData.type === "table") {
+      // ✅ NEW: Table name validation
+      if (!formData.name) newErrors.name = "Table Name is required for binding";
       if (!formData.label) newErrors.label = "Table Label is required";
       if (!formData.dataUrl) newErrors.dataUrl = "Data API URL is required";
       if (!formData.columns || formData.columns.length === 0) {
@@ -325,8 +329,6 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                       size="large"
                     />
                   </div>
-
-                  <Divider />
 
                   {/* Sub Channel ID */}
                   <div>
@@ -585,6 +587,26 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
 
         {component.type === "button" && (
           <>
+            {/* ✅ Button Name Field */}
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Button Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                status={errors.name ? "error" : ""}
+                value={formData.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="e.g. submitButton, searchButton"
+                size="large"
+              />
+              {errors.name && (
+                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+              )}
+              <p className="text-xs text-slate-500 mt-1">
+                Used to identify this button for table bindings
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold mb-2 text-slate-700">
                 Button Label
@@ -873,6 +895,26 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
 
         {component.type === "table" && (
           <>
+            {/* ✅ Table Name Field */}
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Table Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                status={errors.name ? "error" : ""}
+                value={formData.name || ""}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="e.g. resultsTable, ordersTable"
+                size="large"
+              />
+              {errors.name && (
+                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+              )}
+              <p className="text-xs text-slate-500 mt-1">
+                Used to identify this table for button bindings
+              </p>
+            </div>
+
             {/* Table Label */}
             <div>
               <label className="block text-sm font-semibold mb-2 text-slate-700">
@@ -904,6 +946,68 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
               />
               {errors.dataUrl && (
                 <p className="text-red-500 text-xs mt-1">{errors.dataUrl}</p>
+              )}
+            </div>
+
+            {/* API Configuration Section */}
+            <h4 className="font-semibold mb-4 text-slate-800">
+              API Configuration
+            </h4>
+
+            {/* Sub Channel ID */}
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Sub Channel ID <span className="text-red-500">*</span>
+              </label>
+              <Select
+                status={errors.subChannelId ? "error" : ""}
+                popupMatchSelectWidth={false}
+                value={formData.tableApiCommon?.subChannelId}
+                options={SUBCHANNEL_OPTIONS}
+                onChange={(v) => updateTableApiCommonField("subChannelId", v)}
+                placeholder="Select a channel"
+                size="large"
+              />
+              {errors.subChannelId && (
+                <p className="text-red-500 text-xs mt-1">{errors.subChannelId}</p>
+              )}
+            </div>
+
+            {/* Sub Service ID */}
+            <div className="mt-4">
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Sub Service ID <span className="text-red-500">*</span>
+              </label>
+              <Select
+                status={errors.subServiceId ? "error" : ""}
+                popupMatchSelectWidth={false}
+                value={formData.tableApiCommon?.subServiceId}
+                options={SUBSERVICE_OPTIONS}
+                onChange={(v) => updateTableApiCommonField("subServiceId", v)}
+                placeholder="Select a service"
+                size="large"
+              />
+              {errors.subServiceId && (
+                <p className="text-red-500 text-xs mt-1">{errors.subServiceId}</p>
+              )}
+            </div>
+
+            {/* Trace No */}
+            <div className="mt-4">
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Trace No <span className="text-red-500">*</span>
+              </label>
+              <Input
+                status={errors.traceNo ? "error" : ""}
+                value={formData.tableApiCommon?.traceNo || ""}
+                onChange={(e) =>
+                  updateTableApiCommonField("traceNo", e.target.value)
+                }
+                placeholder="e.g. REQ-GET-RECORDS"
+                size="large"
+              />
+              {errors.traceNo && (
+                <p className="text-red-500 text-xs mt-1">{errors.traceNo}</p>
               )}
             </div>
 
@@ -1057,67 +1161,22 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
 
             <Divider />
 
-            {/* API Configuration Section */}
-            <h4 className="font-semibold mb-4 text-slate-800">
-              API Configuration
-            </h4>
-
-            {/* Sub Channel ID */}
+            {/* ✅ Trigger Button Name Configuration - Simple Text Field */}
             <div>
               <label className="block text-sm font-semibold mb-2 text-slate-700">
-                Sub Channel ID <span className="text-red-500">*</span>
+                Trigger Button Name (Optional)
               </label>
-              <Select
-                status={errors.subChannelId ? "error" : ""}
-                popupMatchSelectWidth={false}
-                value={formData.tableApiCommon?.subChannelId}
-                options={SUBCHANNEL_OPTIONS}
-                onChange={(v) => updateTableApiCommonField("subChannelId", v)}
-                placeholder="Select a channel"
-                size="large"
-              />
-              {errors.subChannelId && (
-                <p className="text-red-500 text-xs mt-1">{errors.subChannelId}</p>
-              )}
-            </div>
-
-            {/* Sub Service ID */}
-            <div className="mt-4">
-              <label className="block text-sm font-semibold mb-2 text-slate-700">
-                Sub Service ID <span className="text-red-500">*</span>
-              </label>
-              <Select
-                status={errors.subServiceId ? "error" : ""}
-                popupMatchSelectWidth={false}
-                value={formData.tableApiCommon?.subServiceId}
-                options={SUBSERVICE_OPTIONS}
-                onChange={(v) => updateTableApiCommonField("subServiceId", v)}
-                placeholder="Select a service"
-                size="large"
-              />
-              {errors.subServiceId && (
-                <p className="text-red-500 text-xs mt-1">{errors.subServiceId}</p>
-              )}
-            </div>
-
-            {/* Trace No */}
-            <div className="mt-4">
-              <label className="block text-sm font-semibold mb-2 text-slate-700">
-                Trace No <span className="text-red-500">*</span>
-              </label>
+              <p className="text-xs text-slate-500 mb-3">
+                Enter the button name that will trigger this table to refresh
+              </p>
+              
               <Input
-                status={errors.traceNo ? "error" : ""}
-                value={formData.tableApiCommon?.traceNo || ""}
-                onChange={(e) =>
-                  updateTableApiCommonField("traceNo", e.target.value)
-                }
-                placeholder="e.g. REQ-GET-RECORDS"
+                value={formData.triggerButtonName || ""}
+                onChange={(e) => updateField("triggerButtonName", e.target.value)}
+                placeholder="e.g. searchButton, submitButton"
                 size="large"
               />
-              {errors.traceNo && (
-                <p className="text-red-500 text-xs mt-1">{errors.traceNo}</p>
-              )}
-            </div>
+            </div>          
           </>
         )}
 
