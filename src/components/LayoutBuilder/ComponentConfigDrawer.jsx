@@ -421,7 +421,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <label className="block text-sm font-semibold text-slate-700">
-                        Field Mappings
+                        Field Mappings <span className="text-red-500">*</span>
                       </label>
                       <Button
                         type="dashed"
@@ -446,15 +446,27 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                       </Button>
                     </div>
 
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {/* Helper Text */}
+                    <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                      <p className="font-semibold mb-1">🔍 How it works:</p>
+                      <p>The system searches the entire API response for the field name you specify (e.g., "menuName") and uses the first match found. Just enter the exact field name from your API response.</p>
+                    </div>
+
+                    {errors.onBlurFieldMappings && (
+                      <p className="text-red-500 text-xs mb-2">
+                        {errors.onBlurFieldMappings}
+                      </p>
+                    )}
+
+                    <div className="space-y-2 max-h-56 overflow-y-auto">
                       {formData.onBlurApi?.fieldMappings?.map(
                         (mapping, index) => (
                           <div
                             key={mapping.id}
-                            className="p-3 bg-white rounded border border-slate-200 space-y-2"
+                            className="p-3 bg-white rounded border border-slate-200 hover:border-blue-300 space-y-2 transition-colors"
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-semibold text-slate-500">
+                              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded">
                                 Mapping {index + 1}
                               </span>
                               <Button
@@ -475,12 +487,12 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                             </div>
 
                             <div>
-                              <label className="text-xs font-semibold text-slate-600">
+                              <label className="text-xs font-semibold text-slate-600 block mb-1">
                                 API Response Field Name
                               </label>
                               <Input
                                 size="small"
-                                placeholder="e.g. customerName"
+                                placeholder="e.g. menuName"
                                 value={mapping.apiResponseField || ""}
                                 onChange={(e) => {
                                   const updated =
@@ -500,11 +512,14 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                                   });
                                 }}
                               />
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                Enter the exact field name from the API response (searched recursively)
+                              </p>
                             </div>
 
                             <div>
-                              <label className="text-xs font-semibold text-slate-600">
-                                Target Field Name (form field to populate)
+                              <label className="text-xs font-semibold text-slate-600 block mb-1">
+                                Target Field Name
                               </label>
                               <Input
                                 size="small"
@@ -528,6 +543,9 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                                   });
                                 }}
                               />
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                The form field name to populate (must match another field's name)
+                              </p>
                             </div>
                           </div>
                         )
