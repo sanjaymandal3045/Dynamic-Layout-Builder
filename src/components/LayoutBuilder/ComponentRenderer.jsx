@@ -155,6 +155,34 @@ const ComponentRenderer = ({
     </div>
   );
 
+  // Utility function to search for a field by name in the entire response object
+  const searchFieldInResponse = (obj, fieldName) => {
+    if (!obj || typeof obj !== 'object') return undefined;
+
+    // Check if current object has the field
+    if (obj.hasOwnProperty(fieldName)) {
+      return obj[fieldName];
+    }
+
+    // If it's an array, search each item
+    if (Array.isArray(obj)) {
+      for (let item of obj) {
+        const result = searchFieldInResponse(item, fieldName);
+        if (result !== undefined) return result;
+      }
+    } else {
+      // If it's an object, search all values
+      for (let key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const result = searchFieldInResponse(obj[key], fieldName);
+          if (result !== undefined) return result;
+        }
+      }
+    }
+
+    return undefined;
+  };
+
   switch (component.type) {
     case "field":
       const handleFieldBlur = async () => {
@@ -174,17 +202,32 @@ const ComponentRenderer = ({
               payload,
             );
 
+            console.log("onBlur API Response:", response);
+
             if (response?.data) {
               // Map API response fields to form fields
-              component.onBlurApi.fieldMappings?.forEach((mapping) => {
-                const apiValue =
-                  response.data.attributes?.[mapping.apiResponseField] ||
-                  response.data?.[mapping.apiResponseField];
-                if (apiValue !== undefined) {
+              const mappingsExecution = component.onBlurApi.fieldMappings?.map((mapping) => {
+                // Search the entire response for the field name
+                const apiValue = searchFieldInResponse(response.data, mapping.apiResponseField);
+
+
+                if (apiValue !== undefined && apiValue !== null) {
                   onValueChange(mapping.targetFieldName, apiValue);
+                  return true;
                 }
+                return false;
               });
-              messageApi.success("Data fetched successfully");
+
+              const successCount = mappingsExecution?.filter(Boolean).length || 0;
+              if (successCount > 0) {
+                messageApi.success(
+                  `Data fetched successfully (${successCount} field${successCount > 1 ? 's' : ''} populated)`
+                );
+              } else {
+                messageApi.warning(
+                  "API response received but no matching fields found. Check field mapping names."
+                );
+              }
             }
           } catch (error) {
             console.error("onBlur API call failed:", error);
