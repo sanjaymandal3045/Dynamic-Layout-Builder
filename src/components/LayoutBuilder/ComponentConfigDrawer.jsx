@@ -446,12 +446,6 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                       </Button>
                     </div>
 
-                    {/* Helper Text */}
-                    <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-                      <p className="font-semibold mb-1">🔍 How it works:</p>
-                      <p>The system searches the entire API response for the field name you specify (e.g., "menuName") and uses the first match found. Just enter the exact field name from your API response.</p>
-                    </div>
-
                     {errors.onBlurFieldMappings && (
                       <p className="text-red-500 text-xs mb-2">
                         {errors.onBlurFieldMappings}
@@ -513,7 +507,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                                 }}
                               />
                               <p className="text-[10px] text-slate-500 mt-0.5">
-                                Enter the exact field name from the API response (searched recursively)
+                                Enter the exact field name from the API response
                               </p>
                             </div>
 

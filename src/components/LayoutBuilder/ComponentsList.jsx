@@ -13,6 +13,7 @@ import {
 import { COMPONENT_TYPES } from "../../utilities/constants";
 import ComponentItem from "./ComponentItem";
 import { MenuIcon } from "lucide-react";
+import { v7 as uuidv7 } from 'uuid';
 
 const TYPE_ICONS = {
   field: <FormOutlined />,
@@ -33,7 +34,8 @@ const ComponentsList = ({
   onConfigure,
 }) => {
   const addComponent = (type) => {
-    const id = Date.now() + Math.random();
+    // const id = Date.now() + Math.random();
+    const id = uuidv7();
 
     const componentTemplates = {
       field: {
@@ -43,6 +45,7 @@ const ComponentsList = ({
         label: "New Field",
         fieldType: "text",
         required: false,
+        controlString: "111",
       },
       text: {
         id,
@@ -50,6 +53,7 @@ const ComponentsList = ({
         content: "Sample Text",
         fontSize: 16,
         fontWeight: "normal",
+        controlString: "111",
       },
       // ✅ UPDATED: Button now has name field
       button: {
@@ -68,6 +72,7 @@ const ComponentsList = ({
           subServiceId: null,
           traceNo: "",
         },
+        controlString: "111",
       },
       spacer: { id, type, height: 16 },
       divider: { id, type },
@@ -85,6 +90,7 @@ const ComponentsList = ({
           { label: "Option 1", value: "val1" },
           { label: "Option 2", value: "val2" },
         ],
+        controlString: "111",
       },
       // ✅ UPDATED: Table now has name field
       table: {
@@ -94,6 +100,7 @@ const ComponentsList = ({
         label: "Data Table",
         dataUrl: "",
         pagination: true,
+        controlString: "111",
         columns: [
           {
             id: Date.now(),

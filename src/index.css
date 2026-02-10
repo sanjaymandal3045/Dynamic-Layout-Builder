@@ -31,3 +31,9 @@ body {
     transform: rotateY(359deg);
   }
 }
+
+
+.ant-spin-text {
+  padding-top: 40px !important; /* Adjust this value for more/less gap */
+  color: #0d9488;
+}
