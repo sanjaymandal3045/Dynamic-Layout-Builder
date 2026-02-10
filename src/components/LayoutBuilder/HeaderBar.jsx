@@ -22,22 +22,52 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
   const saveConfigApi = useApi();
   const [messageApi, contextHolder] = message.useMessage();
 
+  /**
+   * Validate mandatory fields before saving
+   * @returns {boolean} true if validation passes, false otherwise
+   */
+  const validateConfig = () => {
+    // Check if pageKey is empty
+    if (!config.pageKey || config.pageKey.trim() === "") {
+      messageApi.error("Page Key is mandatory");
+      return false;
+    }
+
+    // Check if title is empty
+    if (!config.title || config.title.trim() === "") {
+      messageApi.error("Display Title is mandatory");
+      return false;
+    }
+
+    return true;
+  };
+
   const saveConfig = async () => {
     try {
+      // Validate fields before making API call
+      if (!validateConfig()) {
+        return;
+      }
+
       const params = {
         subChannelId: "2",
         subServiceId: "8",
         traceNo: "123",
-        attributes: config
+        attributes: config,
       };
+
       const response = await saveConfigApi.post("/transaction/execute", params);
+
       if (response.success === true) {
-        messageApi.success(response.message || "Configuration saved successfully");
+        messageApi.success(
+          response.message || "Configuration saved successfully"
+        );
       } else {
         messageApi.error(response.message || "Configuration not saved");
       }
     } catch (error) {
-      messageApi.error("Failed to save page configuration", error);
+      messageApi.error("Failed to save page configuration");
+      console.error("Save config error:", error);
     }
   };
 
@@ -48,6 +78,13 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
   const handleTitleChange = (e) => {
     onUpdateConfig({ ...config, title: e.target.value });
   };
+
+  /**
+   * Check if fields are valid (for UI feedback)
+   */
+  const isPageKeyValid = config.pageKey && config.pageKey.trim() !== "";
+  const isTitleValid = config.title && config.title.trim() !== "";
+  const isFormValid = isPageKeyValid && isTitleValid;
 
   return (
     <>
@@ -63,29 +100,50 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
+              {/* Page Key Input */}
               <div className="flex flex-col">
                 <label className="text-[10px] font-bold text-slate-500 ml-1 mb-1 uppercase">
                   Page Key
+                  <span className="text-red-500 ml-1">*</span>
                 </label>
                 <Input
-                required={true}
+                  required
                   placeholder="e.g. user-profile"
                   value={config.pageKey}
                   onChange={handlePageKeyChange}
-                  className="w-full sm:w-48 bg-slate-50 border-slate-200 hover:border-blue-400 focus:bg-white transition-all"
+                  className={`w-full sm:w-48 bg-slate-50 border-slate-200 hover:border-blue-400 focus:bg-white transition-all ${
+                    !isPageKeyValid && config.pageKey !== undefined
+                      ? "border-red-400 focus:border-red-500"
+                      : ""
+                  }`}
                   prefix={<SettingOutlined className="text-slate-400" />}
+                  status={
+                    !isPageKeyValid && config.pageKey !== undefined
+                      ? "error"
+                      : ""
+                  }
                 />
               </div>
+
+              {/* Display Title Input */}
               <div className="flex flex-col">
                 <label className="text-[10px] font-bold text-slate-500 ml-1 mb-1 uppercase">
                   Display Title
+                  <span className="text-red-500 ml-1">*</span>
                 </label>
                 <Input
-                required={true}
+                  required
                   placeholder="Enter Report Title"
                   value={config.title}
                   onChange={handleTitleChange}
-                  className="w-full sm:w-64 bg-slate-50 border-slate-200 hover:border-blue-400 focus:bg-white transition-all"
+                  className={`w-full sm:w-64 bg-slate-50 border-slate-200 hover:border-blue-400 focus:bg-white transition-all ${
+                    !isTitleValid && config.title !== undefined
+                      ? "border-red-400 focus:border-red-500"
+                      : ""
+                  }`}
+                  status={
+                    !isTitleValid && config.title !== undefined ? "error" : ""
+                  }
                 />
               </div>
             </div>
@@ -114,15 +172,24 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
 
               <Divider type="vertical" className="h-8 border-slate-200" />
 
-              <Button
-                type="primary"
-                icon={<CloudUploadOutlined />}
-                onClick={saveConfig}
-                className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-100 px-6"
-                loading={saveConfigApi.loading}
+              <Tooltip
+                title={
+                  !isFormValid
+                    ? "Please fill in all mandatory fields (Page Key and Display Title)"
+                    : "Save Configuration"
+                }
               >
-                Save
-              </Button>
+                <Button
+                  type="primary"
+                  icon={<CloudUploadOutlined />}
+                  onClick={saveConfig}
+                  className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-100 px-6"
+                  loading={saveConfigApi.loading}
+                  disabled={!isFormValid}
+                >
+                  Save
+                </Button>
+              </Tooltip>
             </Space>
           </div>
         </div>

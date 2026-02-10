@@ -8,15 +8,17 @@ const apiClient = axios.create({
   timeout: 20000,
 });
 
-// Example interceptor — attach tokens if needed
-// apiClient.interceptors.request.use(
-//   (config) => {
-//     const token = localStorage.getItem("AUTH_TOKEN");
-//     if (token) config.headers.Authorization = `Bearer ${token}`;
-//     return config;
-//   },
-//   (error) => Promise.reject(error)
-// );
+// Request interceptor — attach tokens
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Response interceptor
 apiClient.interceptors.response.use(
@@ -29,9 +31,19 @@ apiClient.interceptors.response.use(
     }
 
     if ([401, 440].includes(response.status)) {
+      // Token expired or invalid
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("employeeId");
+      localStorage.removeItem("fullName");
+      localStorage.removeItem("roles");
+      
       message.error(
         response.data?.pErrorMessage || "Authentication expired. Please login."
       );
+      
+      // Redirect to login
+      window.location.href = "/login";
     }
 
     if (response.status === 403) {
@@ -61,46 +73,54 @@ export const useApi = () => {
     }
   }, []);
 
-  const request = useCallback(async (method, url, body = {}, params = {}) => {
-    setLoading(true);
-    setError(null);
-    setStatus("loading");
+  const request = useCallback(
+    async (method, url, body = {}, params = {}) => {
+      setLoading(true);
+      setError(null);
+      setStatus("loading");
 
-    cancelRequest();
-    controllerRef.current = new AbortController();
+      cancelRequest();
+      controllerRef.current = new AbortController();
 
-    try {
-      const res =
-        method === "get"
-          ? await apiClient.get(url, { params, signal: controllerRef.current.signal })
-          : await apiClient[method](url, body, {
-              params,
-              signal: controllerRef.current.signal,
-            });
+      try {
+        const res =
+          method === "get"
+            ? await apiClient.get(url, {
+                params,
+                signal: controllerRef.current.signal,
+              })
+            : await apiClient[method](url, body, {
+                params,
+                signal: controllerRef.current.signal,
+              });
 
-      setData(res.data);
-      setStatus("success");
-      return res.data;
-    } catch (err) {
-      if (axios.isCancel(err)) {
-        setStatus("canceled");
+        setData(res.data);
+        setStatus("success");
+        return res.data;
+      } catch (err) {
+        if (axios.isCancel(err)) {
+          setStatus("canceled");
+          return null;
+        }
+
+        const msg =
+          err?.p_ERROR_MESSAGE ||
+          err?.message ||
+          "Request failed, please try again.";
+
+        setError(msg);
+        setStatus("error");
+
+        // Notification handled here
+        message.error(msg);
+
         return null;
+      } finally {
+        setLoading(false);
       }
-
-      const msg =
-        err?.p_ERROR_MESSAGE || err?.message || "Request failed, please try again.";
-
-      setError(msg);
-      setStatus("error");
-
-      // Notification handled here
-      message.error(msg);
-
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [cancelRequest]);
+    },
+    [cancelRequest]
+  );
 
   // Expose actions
   const api = useMemo(

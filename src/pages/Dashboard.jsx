@@ -20,7 +20,7 @@ import {
   WalletOutlined,
 } from "@ant-design/icons";
 
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Header, Content, Sider } = Layout;
@@ -44,6 +44,8 @@ const Dashboard = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const userName = useSelector((state) => state.auth.fullName);
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -256,7 +258,7 @@ const Dashboard = () => {
                   // preview={false}
                 />
                 <Text strong style={{ fontSize: 14 }}>
-                  User
+                  {userName || ""}
                 </Text>
               </Space>
               <Button

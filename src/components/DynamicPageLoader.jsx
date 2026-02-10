@@ -4,6 +4,7 @@ import LayoutPreview from "./LayoutBuilder/LayoutPreview";
 import { PAGE_REGISTRY } from "../config/pageRegistry";
 import cbsReportJson from "./../config/pages/cbs-report.json";
 import { useApi } from "../utilities/axiosApiCall";
+import SplashScreen from "./UI/SplashScreen";
 
 const DynamicPageLoader = ({ pageKey }) => {
   const [config, setConfig] = useState({});
@@ -68,7 +69,8 @@ const DynamicPageLoader = ({ pageKey }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Spin size="large" />
+        {/* <Spin size="large" /> */}
+        <SplashScreen tip="Loading page configuration..." />
       </div>
     );
   }
