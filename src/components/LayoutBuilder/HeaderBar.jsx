@@ -117,11 +117,6 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
                       : ""
                   }`}
                   prefix={<SettingOutlined className="text-slate-400" />}
-                  status={
-                    !isPageKeyValid && config.pageKey !== undefined
-                      ? "error"
-                      : ""
-                  }
                 />
               </div>
 
@@ -141,9 +136,6 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
                       ? "border-red-400 focus:border-red-500"
                       : ""
                   }`}
-                  status={
-                    !isTitleValid && config.title !== undefined ? "error" : ""
-                  }
                 />
               </div>
             </div>
