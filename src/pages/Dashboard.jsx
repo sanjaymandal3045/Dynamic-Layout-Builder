@@ -9,6 +9,8 @@ import {
   Space,
   Image,
   message,
+  Spin,
+  Skeleton,
 } from "antd";
 import {
   UserOutlined,
@@ -200,27 +202,48 @@ const Dashboard = () => {
               />
             )}
           </div>
-          <Menu
-            theme="light"
-            selectedKeys={[selectedKey]}
-            mode="inline"
-            items={menuItems}
-            onClick={({ key }) => {
-              setSelectedKey(key);
-              if (contentRef.current) {
-                contentRef.current.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                });
-              }
-            }}
-            style={{
-              borderRight: 0,
-              fontSize: 13.5,
-              padding: "8px 0",
-            }}
-            className="modern-menu"
-          />
+          {getMenuListApi.loading ? (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                flexDirection: "column",
+                height: "80%",
+                width: "80%",
+                textAlign: "center",
+                padding: "20px 0",
+                marginLeft: "10%",
+              }}
+            >
+              <Skeleton
+                active
+                title={{ width: 100 }}
+                paragraph={{ rows: 6, width: [180, 200, 180, 180, 200, 180] }} // Custom widths for each row
+              />
+            </div>
+          ) : (
+            <Menu
+              theme="light"
+              selectedKeys={[selectedKey]}
+              mode="inline"
+              items={menuItems}
+              onClick={({ key }) => {
+                setSelectedKey(key);
+                if (contentRef.current) {
+                  contentRef.current.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }
+              }}
+              style={{
+                borderRight: 0,
+                fontSize: 13.5,
+                padding: "8px 0",
+              }}
+              className="modern-menu"
+            />
+          )}
         </Sider>
 
         <Layout style={{ marginLeft: collapsed ? 80 : 260 }}>
