@@ -9,6 +9,7 @@ import {
   Table,
   Space,
   message,
+  Tooltip,
 } from "antd";
 import { DeleteOutlined, LockOutlined } from "@ant-design/icons";
 import { useApi } from "../../utilities/axiosApiCall";
@@ -39,16 +40,16 @@ const ComponentRenderer = ({
       return { canRead: true, canWrite: true, canMask: false };
     }
     return {
-      canRead: permissionString[0] === '1',
-      canWrite: permissionString[1] === '1',
-      canMask: permissionString[2] === '1',
+      canRead: permissionString[0] === "1",
+      canWrite: permissionString[1] === "1",
+      canMask: permissionString[2] === "1",
     };
   };
 
   // Check if component should be visible and enabled based on permissions
   const getComponentState = (component) => {
     const permissions = parsePermissions(component.permissionString);
-    
+
     return {
       isVisible: permissions.canRead, // Hide if no read permission
       isDisabled: !permissions.canWrite, // Disable if no write permission
@@ -152,7 +153,7 @@ const ComponentRenderer = ({
 
   // Utility function to search for a field by name in the entire response object
   const searchFieldInResponse = (obj, fieldName) => {
-    if (!obj || typeof obj !== 'object') return undefined;
+    if (!obj || typeof obj !== "object") return undefined;
 
     // Check if current object has the field
     if (obj.hasOwnProperty(fieldName)) {
@@ -183,7 +184,7 @@ const ComponentRenderer = ({
     switch (component.type) {
       case "field":
         const componentState = getComponentState(component);
-        
+
         // If no read permission, don't render the field
         if (!componentState.isVisible) {
           return null;
@@ -210,25 +211,30 @@ const ComponentRenderer = ({
 
               if (response?.data) {
                 // Map API response fields to form fields
-                const mappingsExecution = component.onBlurApi.fieldMappings?.map((mapping) => {
-                  // Search the entire response for the field name
-                  const apiValue = searchFieldInResponse(response.data, mapping.apiResponseField);
+                const mappingsExecution =
+                  component.onBlurApi.fieldMappings?.map((mapping) => {
+                    // Search the entire response for the field name
+                    const apiValue = searchFieldInResponse(
+                      response.data,
+                      mapping.apiResponseField,
+                    );
 
-                  if (apiValue !== undefined && apiValue !== null) {
-                    onValueChange(mapping.targetFieldName, apiValue);
-                    return true;
-                  }
-                  return false;
-                });
+                    if (apiValue !== undefined && apiValue !== null) {
+                      onValueChange(mapping.targetFieldName, apiValue);
+                      return true;
+                    }
+                    return false;
+                  });
 
-                const successCount = mappingsExecution?.filter(Boolean).length || 0;
+                const successCount =
+                  mappingsExecution?.filter(Boolean).length || 0;
                 if (successCount > 0) {
                   messageApi.success(
-                    `Data fetched successfully (${successCount} field${successCount > 1 ? 's' : ''} populated)`
+                    `Data fetched successfully (${successCount} field${successCount > 1 ? "s" : ""} populated)`,
                   );
                 } else {
                   messageApi.warning(
-                    "API response received but no matching fields found."
+                    "API response received but no matching fields found.",
                   );
                 }
               }
@@ -244,19 +250,30 @@ const ComponentRenderer = ({
         return (
           <div style={gridColumnStyle}>
             {renderWrapper(
-              <div className="flex flex-col w-full gap-2">
+              <div className=" gap-2">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  {component.label}{" "}
-                  {component.required && <span className="text-red-500">*</span>}
+                  <Typography.Text
+                    style={{ maxWidth: 150 }}
+                    ellipsis={{ tooltip: component.label }}
+                  >
+                    {component.label}
+                  </Typography.Text>
+
+                  {component.required && (
+                    <span className="text-red-500 flex-shrink-0">*</span>
+                  )}
                   {componentState.isDisabled && (
-                    <LockOutlined className="text-xs text-orange-500" title="Read-only" />
+                    <LockOutlined className="text-xs text-orange-500 flex-shrink-0" />
                   )}
                 </label>
+
                 <Input
                   type={component.fieldType}
                   placeholder={component.placeholder}
                   value={value || ""}
-                  onChange={(e) => onValueChange(component.name, e.target.value)}
+                  onChange={(e) =>
+                    onValueChange(component.name, e.target.value)
+                  }
                   onBlur={handleFieldBlur}
                   className="rounded-md"
                   disabled={isFieldDisabled}
@@ -269,7 +286,7 @@ const ComponentRenderer = ({
 
       case "text":
         const textComponentState = getComponentState(component);
-        
+
         // If no read permission, don't render
         if (!textComponentState.isVisible) {
           return null;
@@ -294,7 +311,7 @@ const ComponentRenderer = ({
 
       case "button":
         const buttonComponentState = getComponentState(component);
-        
+
         // If no read permission, don't render
         if (!buttonComponentState.isVisible) {
           return null;
@@ -378,7 +395,7 @@ const ComponentRenderer = ({
 
       case "card":
         const cardComponentState = getComponentState(component);
-        
+
         // If no read permission, don't render
         if (!cardComponentState.isVisible) {
           return null;
@@ -413,7 +430,7 @@ const ComponentRenderer = ({
 
       case "select":
         const selectComponentState = getComponentState(component);
-        
+
         // If no read permission, don't render
         if (!selectComponentState.isVisible) {
           return null;
@@ -432,9 +449,14 @@ const ComponentRenderer = ({
               <div className="flex flex-col w-full gap-2">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                   {component.label}{" "}
-                  {component.required && <span className="text-red-500">*</span>}
+                  {component.required && (
+                    <span className="text-red-500">*</span>
+                  )}
                   {selectComponentState.isDisabled && (
-                    <LockOutlined className="text-xs text-orange-500" title="Read-only" />
+                    <LockOutlined
+                      className="text-xs text-orange-500"
+                      title="Read-only"
+                    />
                   )}
                 </label>
                 <Select
@@ -456,7 +478,7 @@ const ComponentRenderer = ({
 
       case "table":
         const tableComponentState = getComponentState(component);
-        
+
         // If no read permission, don't render
         if (!tableComponentState.isVisible) {
           return null;
@@ -519,7 +541,10 @@ const ComponentRenderer = ({
               <label className="text-sm font-semibold text-slate-700 block mb-3 px-2 flex items-center gap-2">
                 {component.label}
                 {tableComponentState.isDisabled && (
-                  <LockOutlined className="text-xs text-orange-500" title="Read-only" />
+                  <LockOutlined
+                    className="text-xs text-orange-500"
+                    title="Read-only"
+                  />
                 )}
               </label>
             )}
@@ -528,17 +553,17 @@ const ComponentRenderer = ({
               dataSource={tableData}
               loading={tableLoading}
               pagination={
-                  component.pagination !== false
-                    ? {
-                        pageSize: pageSize,
-                        showSizeChanger: true,
-                        pageSizeOptions: ["5", "10", "20", "50", "100"],
-                        showTotal: (total) => `Total ${total} records`,
-                        onChange: (page, size) => setPageSize(size),
-                        onShowSizeChange: (current, size) => setPageSize(size),
-                      }
-                    : false
-                }
+                component.pagination !== false
+                  ? {
+                      pageSize: pageSize,
+                      showSizeChanger: true,
+                      pageSizeOptions: ["5", "10", "20", "50", "100"],
+                      showTotal: (total) => `Total ${total} records`,
+                      onChange: (page, size) => setPageSize(size),
+                      onShowSizeChange: (current, size) => setPageSize(size),
+                    }
+                  : false
+              }
               rowKey={(record) => record.id || Math.random()}
               size="small"
               scroll={{ x: true }}

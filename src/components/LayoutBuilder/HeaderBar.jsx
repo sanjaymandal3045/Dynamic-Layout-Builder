@@ -167,7 +167,7 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
               <Tooltip
                 title={
                   !isFormValid
-                    ? "Please fill in all mandatory fields (Page Key and Display Title)"
+                    ? "Please fill in all mandatory fields"
                     : "Save Configuration"
                 }
               >

@@ -26,9 +26,6 @@ import { loginUser } from "@/redux/slices/authSlice";
 import { useApi } from "@/utilities/axiosApiCall";
 import dbblLogo from "@/assets/dbbl_logo.png";
 
-// API endpoint for login (full URL since baseURL is /api/v2/)
-const LOGIN_URL = "http://172.16.218.122:8080/api/v1/auth/login";
-
 const Login = () => {
   // const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -39,6 +36,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const api = useApi();
 
   useEffect(() => {
     setMounted(true);
@@ -57,22 +55,14 @@ const Login = () => {
       const values = await form.validateFields();
       console.log("Form values:", { employeeId: values.username, password: values.password });
 
-      // Make API call to login endpoint
-      const response = await fetch(LOGIN_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          employeeId: values.username,
-          password: values.password,
-        }),
+      // Make API call to login endpoint using useApi hook
+      const response = await api.post("auth/login", {
+        employeeId: values.username,
+        password: values.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success || !data.data) {
-        messageApi.error(data.message || "Login failed. Please check your credentials.");
+      if (!response || !response.data) {
+        messageApi.error("Error occurred while logging in.");
         setIsSubmitting(false);
         return;
       }
@@ -85,7 +75,7 @@ const Login = () => {
         fullName,
         roles,
         tokenType,
-      } = data.data;
+      } = response.data;
 
       console.log("Login response data:", {
         accessToken: accessToken?.substring(0, 20) + "...",
@@ -126,7 +116,7 @@ const Login = () => {
         setIsSubmitting(false);
       }, 800);
     } catch (error) {
-      // Error handling is done in the hook
+      // Error handling is done in the useApi hook
       console.error("Login error:", error);
       setIsSubmitting(false);
     }
@@ -155,7 +145,7 @@ const Login = () => {
                     level={3}
                     className="!mb-0 !text-white !text-xl font-bold"
                   >
-                    RBS Portal
+                    Dutch Bangla Bank PLC.
                   </Title>
                 </div>
               </div>
@@ -165,11 +155,10 @@ const Login = () => {
                   level={2}
                   className="!text-4xl !text-white !mb-4 !leading-tight font-bold"
                 >
-                  Banking Reports
+                  Common Data Repository
                 </Title>
                 <Text className="!text-slate-300 text-base block mb-8 leading-relaxed max-w-sm">
-                  Secure access to financial reports and management tools for
-                  Bangladesh Bank operations.
+                  for ECL & RBS.
                 </Text>
               </div>
             </div>

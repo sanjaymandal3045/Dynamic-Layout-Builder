@@ -148,7 +148,7 @@ const LayoutPreview = ({
         messageApi.success(
           apiConfig.successMessage || "Action completed successfully!",
         );
-        
+
         // ✅ Trigger table refresh using triggerButtonName
         if (buttonComponent.name) {
           const tablesToRefresh = [];
@@ -205,21 +205,7 @@ const LayoutPreview = ({
   };
 
   if (!config || !config.tabs || !Array.isArray(config.tabs)) {
-    return (
-      <>
-        {contextHolder}
-        <div className="min-h-screen bg-slate-50 p-8 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              No Configuration Found
-            </h2>
-            <p className="text-slate-500">
-              Please check back later or contact support.
-            </p>
-          </div>
-        </div>
-      </>
-    );
+    return <>{contextHolder}</>;
   }
 
   const tabItems = config.tabs.map((tab) => ({

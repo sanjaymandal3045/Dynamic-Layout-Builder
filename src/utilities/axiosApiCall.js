@@ -8,51 +8,75 @@ const apiClient = axios.create({
   timeout: 20000,
 });
 
-// Request interceptor — attach tokens
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Store for Redux dispatch (will be set during app initialization)
+let reduxDispatch = null;
 
-// Response interceptor
-apiClient.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    const { response } = err;
-    if (!response) {
-      message.error("Network error");
-      return Promise.reject({ message: "Network error" });
-    }
+/**
+ * Initialize axios interceptors with Redux dispatch
+ * Call this from AppRoutes to enable proper Redux state sync on 401 errors
+ */
+export const initializeAxiosInterceptors = (dispatch) => {
+  reduxDispatch = dispatch;
+  
+  // Clear any previous interceptors and set up new ones
+  apiClient.interceptors.request.clear();
+  apiClient.interceptors.response.clear();
 
-    if ([401, 440].includes(response.status)) {
-      // Token expired or invalid
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("employeeId");
-      localStorage.removeItem("fullName");
-      localStorage.removeItem("roles");
-      
-      message.error(
-        response.data?.pErrorMessage || "Authentication expired. Please login."
-      );
-      
-      // Redirect to login
-      window.location.href = "/login";
-    }
+  // Request interceptor — attach tokens
+  apiClient.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
 
-    if (response.status === 403) {
-      message.error(response.data?.pErrorMessage || "Forbidden");
-    }
+  // Response interceptor
+  apiClient.interceptors.response.use(
+    (res) => res,
+    (err) => {
+      const { response } = err;
+      if (!response) {
+        message.error("Network error");
+        return Promise.reject({ message: "Network error" });
+      }
 
-    return Promise.reject(response.data || err);
-  }
-);
+      if ([401, 440].includes(response.status)) {
+        // Token expired or invalid
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("employeeId");
+        localStorage.removeItem("fullName");
+        localStorage.removeItem("roles");
+        
+        message.error(
+          response.data?.pErrorMessage || "Authentication expired. Please login."
+        );
+        
+        // Dispatch logout action to sync Redux state with localStorage
+        if (reduxDispatch) {
+          // Import here to avoid circular dependency
+          const { logoutUser } = require("@/redux/slices/authSlice");
+          reduxDispatch(logoutUser());
+        }
+        
+        // Redirect to login with a slight delay to allow Redux to process
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 100);
+      }
+
+      if (response.status === 403) {
+        message.error(response.data?.pErrorMessage || "Forbidden");
+      }
+
+      return Promise.reject(response.data || err);
+    }
+  );
+};
 
 /**
  * Universal API handler managing state for all HTTP methods.
@@ -147,4 +171,36 @@ export const useApi = () => {
   );
 
   return api;
+};
+
+/**
+ * Validate if token exists and is not expired (basic check)
+ * Returns true if token exists and appears valid (not immediately expired)
+ */
+export const isTokenValid = () => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) return false;
+
+  try {
+    // Basic JWT validation - check if it has 3 parts and can be decoded
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+
+    // Decode payload (part 2)
+    const decoded = JSON.parse(atob(parts[1]));
+    
+    // Check expiration (exp is in seconds, convert to milliseconds)
+    if (decoded.exp) {
+      const expirationTime = decoded.exp * 1000;
+      const currentTime = Date.now();
+      
+      // Token is valid if expiration is at least 5 seconds in the future
+      return expirationTime > currentTime + 5000;
+    }
+
+    return true; // No exp claim, assume valid
+  } catch (error) {
+    console.error("Error validating token:", error);
+    return false;
+  }
 };

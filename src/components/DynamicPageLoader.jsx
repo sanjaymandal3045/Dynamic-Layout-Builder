@@ -34,7 +34,7 @@ const DynamicPageLoader = ({ pageKey }) => {
 
           let finalSections = rawConfig?.sections || [];
           if (
-            typeof rawConfig.sections === "string" &&
+            typeof rawConfig?.sections === "string" &&
             finalSections.length === 0
           ) {
             finalSections = JSON.parse(rawConfig.sections);
@@ -75,9 +75,14 @@ const DynamicPageLoader = ({ pageKey }) => {
     );
   }
 
-  if (!config) {
-    return <Empty style={{marginTop:"100px"}} description="Page Configuration not found" />;
-  }
+  // Only render LayoutPreview if config has tabs data
+  // if ((!config || !config.tabs) && loading === false) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64">
+  //       <Empty description="No Configuration Found" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <LayoutPreview

@@ -26,19 +26,23 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Header, Content, Sider } = Layout;
+import { motion, AnimatePresence } from "framer-motion";
 
 // Local Import
 import { logoutUser } from "@/redux/slices/authSlice";
 import dbblLogo from "@/assets/dbbl_logo.png";
 import LayoutBuilder from "../components/LayoutBuilder/LayoutBuilder";
 import DynamicPageLoader from "../components/DynamicPageLoader";
+import ConfigEditorModal from "../components/LayoutBuilder/ConfigEditorModal";
 import { useApi } from "../utilities/axiosApiCall";
 import { buildMenuTree } from "../utilities/common";
+import ContractSearch from "./ContractSearch";
 
 const Dashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState("layout-builder");
   const [menuItems, setMenuItems] = useState([]);
+  const [configEditorOpen, setConfigEditorOpen] = useState(false);
 
   const contentRef = useRef(null);
   const [messageApi, contextHolder] = message.useMessage();
@@ -56,19 +60,10 @@ const Dashboard = () => {
 
   const renderContent = () => {
     if (selectedKey === "layout-builder") {
-      return (
-        <div
-          style={{
-            padding: 4,
-            marginTop: 10,
-            background: "#fff",
-            borderRadius: 8,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-          }}
-        >
-          <LayoutBuilder />
-        </div>
-      );
+      return <LayoutBuilder />;
+    }
+    if (selectedKey === "contract-search") {
+      return <ContractSearch />;
     }
 
     return <DynamicPageLoader pageKey={selectedKey} />;
@@ -101,43 +96,6 @@ const Dashboard = () => {
   return (
     <>
       {contextHolder}
-      <style>{`
-        .modern-sidebar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .modern-sidebar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .modern-sidebar::-webkit-scrollbar-thumb {
-          background: #d1d5db;
-          border-radius: 3px;
-        }
-        .modern-sidebar::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
-        }
-        .modern-menu .ant-menu-item {
-          border-radius: 6px;
-          margin: 2px 8px;
-          transition: all 0.2s ease;
-        }
-        .modern-menu .ant-menu-item:hover {
-          background-color: #f3f4f6;
-        }
-        .modern-menu .ant-menu-item-selected {
-          background-color: #eff6ff !important;
-          color: #2563eb;
-          font-weight: 500;
-        }
-        .modern-menu .ant-menu-submenu-title {
-          border-radius: 6px;
-          margin: 2px 8px;
-          transition: all 0.2s ease;
-        }
-        .modern-menu .ant-menu-submenu-title:hover {
-          background-color: #f3f4f6;
-        }
-      `}</style>
-
       <Layout
         ref={contentRef}
         style={{ minHeight: "100vh", background: "#f8f9fa" }}
@@ -218,7 +176,7 @@ const Dashboard = () => {
               <Skeleton
                 active
                 title={{ width: 100 }}
-                paragraph={{ rows: 6, width: [180, 200, 180, 180, 200, 180] }} // Custom widths for each row
+                paragraph={{ rows: 6, width: [180, 200, 180, 180, 200, 180] }}
               />
             </div>
           ) : (
@@ -272,6 +230,17 @@ const Dashboard = () => {
               }}
             />
 
+            <Button
+              type="primary"
+              onClick={() => setConfigEditorOpen(true)}
+              style={{
+                marginLeft: "auto",
+                marginRight: "16px",
+              }}
+            >
+              Edit Page Config
+            </Button>
+
             <Space size={20}>
               <Space size={10}>
                 <Avatar
@@ -302,17 +271,32 @@ const Dashboard = () => {
             </Space>
           </Header>
 
-          <Content style={{ margin: "0px 10px 10px 10px", minHeight: 280 }}>
-            <div
-            // style={{
-            //   padding: 4,
-            //   background: "#fff",
-            //   borderRadius: 8,
-            //   boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-            // }}
-            >
-              {renderContent()}
-            </div>
+          <Content style={{ margin: "0px 10px 10px 10px" }} className="content-wrapper">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedKey}
+                variants={{
+                  initial: { opacity: 0, x: -50 },
+                  animate: { opacity: 1, x: 0 },
+                  exit: { opacity: 0, x: 50 },
+                }}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                style={{
+                  padding: 4,
+                  marginTop: 10,
+                  background: "#fff",
+                  borderRadius: 8,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                  minHeight: 280,
+                }}
+                className="content-inner"
+              >
+                {renderContent()}
+              </motion.div>
+            </AnimatePresence>
           </Content>
 
           <div
@@ -330,6 +314,11 @@ const Dashboard = () => {
           </div>
         </Layout>
       </Layout>
+
+      <ConfigEditorModal
+        open={configEditorOpen}
+        onClose={() => setConfigEditorOpen(false)}
+      />
     </>
   );
 };
