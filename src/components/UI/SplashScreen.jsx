@@ -18,9 +18,6 @@ const SplashScreen = ({ tip = "Initializing application..." }) => {
         {/* Text and Progress */}
         <div style={textStack}>
           <span style={labelStyle}>{tip}</span>
-          <div style={progressTrack}>
-            <div style={progressFill} />
-          </div>
         </div>
       </div>
 
@@ -116,20 +113,6 @@ const labelStyle = {
   fontWeight: "600",
   letterSpacing: "0.08em",
   textTransform: "uppercase",
-};
-
-const progressTrack = {
-  width: "80px",
-  height: "2px",
-  backgroundColor: "rgba(13, 148, 136, 0.1)",
-  borderRadius: "2px",
-  overflow: "hidden",
-};
-
-const progressFill = {
-  height: "100%",
-  backgroundColor: "#0d9488",
-  animation: "fillUp 1s ease-in-out forwards",
 };
 
 export default SplashScreen;

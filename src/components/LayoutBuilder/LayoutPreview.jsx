@@ -1,8 +1,14 @@
-import React, { useState, useCallback } from "react";
-import { Button, message, Tabs } from "antd";
+import React, { useState } from "react";
+import { Button, message, Tabs, Badge } from "antd";
 import { ArrowLeft } from "lucide-react";
 import ComponentRenderer from "./ComponentRenderer";
 import { useApi } from "../../utilities/axiosApiCall";
+
+const getResponsiveGridTemplate = (columns) => {
+  const minWidths = { 1: "100%", 2: "360px", 3: "280px", 4: "220px" };
+  const minW = minWidths[columns] ?? "180px";
+  return `repeat(auto-fit, minmax(min(${minW}, 100%), 1fr))`;
+};
 
 const LayoutPreview = ({
   config,
@@ -15,7 +21,31 @@ const LayoutPreview = ({
   const apiHandler = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tableRefreshTriggers, setTableRefreshTriggers] = useState({});
+  // Master-detail view state — null = search/list view, object = detail view
+  const [detailView, setDetailView] = useState(null); // { config, formValues }
 
+  // ── Deep-search a field anywhere in a nested response object ────────────────
+  const searchFieldInResponse = (obj, fieldName) => {
+    if (!obj || typeof obj !== "object") return undefined;
+    if (Object.prototype.hasOwnProperty.call(obj, fieldName))
+      return obj[fieldName];
+    if (Array.isArray(obj)) {
+      for (const item of obj) {
+        const r = searchFieldInResponse(item, fieldName);
+        if (r !== undefined) return r;
+      }
+    } else {
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          const r = searchFieldInResponse(obj[key], fieldName);
+          if (r !== undefined) return r;
+        }
+      }
+    }
+    return undefined;
+  };
+
+  // ── Row select handler (column-mapping based, same-tab) ───────────────────────
   const handleTableRowAction = (tableComponent, rowData) => {
     if (tableComponent.rowActions?.showSelect) {
       const mappedValues = {};
@@ -44,15 +74,95 @@ const LayoutPreview = ({
     }
   };
 
+  // ── View Details handler (API-based, cross-tab field population) ────────────
+  const handleViewDetails = async (tableComponent, rowData) => {
+    const ra = tableComponent.rowActions;
+    if (!ra?.showViewDetails || !ra?.viewDetailsApi?.url) {
+      messageApi.warning("View Details API is not configured for this table.");
+      return;
+    }
+
+    const { url, subChannelId, subServiceId, traceNo } = ra.viewDetailsApi;
+    if (!subChannelId || !subServiceId || !traceNo) {
+      messageApi.error("View Details API configuration is incomplete.");
+      return;
+    }
+
+    const hideLoading = messageApi.loading("Loading details...", 0);
+    try {
+      const result = await apiHandler.post(url, {
+        subChannelId,
+        subServiceId,
+        traceNo,
+        attributes: { ...rowData },
+      });
+      console.log("ViewDetails Response:", result);
+      hideLoading();
+
+      if (result) {
+        const mappings = ra.viewDetailsFieldMappings || [];
+        let populated = 0;
+        const resolvedValues = {};
+
+        mappings.forEach((mapping) => {
+          if (!mapping.apiResponseField || !mapping.targetFieldName) return;
+          // Deep search the entire JSON payload instead of an explicit path
+          const val = searchFieldInResponse(result, mapping.apiResponseField);
+          if (val !== undefined && val !== null) {
+            resolvedValues[mapping.targetFieldName] = val;
+            populated++;
+          }
+        });
+
+        // Auto-resolve Header Cards without needing explicit mappings
+        if (ra.viewDetailsConfig?.headerCards) {
+          ra.viewDetailsConfig.headerCards.forEach((card) => {
+            if (card.fieldName) {
+              const val = searchFieldInResponse(result, card.fieldName);
+              if (val !== undefined && val !== null) {
+                resolvedValues[card.fieldName] = val;
+              }
+            }
+          });
+        }
+
+        // If the table has a detail config, switch to detail view
+        if (ra.viewDetailsConfig?.tabs?.length > 0) {
+          // Merge resolved values with current formValues for the detail view
+          const detailFormValues = { ...formValues, ...resolvedValues };
+          setDetailView({
+            config: ra.viewDetailsConfig,
+            formValues: detailFormValues,
+          });
+        } else {
+          // Fallback: populate fields in-place (original behavior)
+          Object.entries(resolvedValues).forEach(([k, v]) =>
+            onValueChange(k, v),
+          );
+          if (populated > 0) {
+            messageApi.success(
+              `${populated} field${populated > 1 ? "s" : ""} populated from details.`,
+            );
+          } else {
+            messageApi.info("Details loaded but no field mappings matched.");
+          }
+        }
+      }
+    } catch (err) {
+      hideLoading();
+      console.error("View Details API error:", err);
+      messageApi.error("Failed to load details. Please try again.");
+    }
+  };
+
+  // ── Button click handler ─────────────────────────────────────────────────────
   const handleAction = (section, buttonComponent) => {
     const sectionFieldNames = section.components
       .filter((comp) => comp.type === "field" || comp.type === "select")
       .map((comp) => comp.name);
 
     if (buttonComponent.onClick === "reset") {
-      sectionFieldNames.forEach((name) => {
-        onValueChange(name, undefined);
-      });
+      sectionFieldNames.forEach((name) => onValueChange(name, undefined));
       messageApi.success(`Cleared fields in ${section.name || "section"}`);
       return;
     }
@@ -64,7 +174,6 @@ const LayoutPreview = ({
       sectionFieldNames.forEach((name) => {
         const component = section.components.find((c) => c.name === name);
         const val = formValues[name];
-
         if (
           component?.required &&
           (val === undefined || val === null || val === "")
@@ -83,6 +192,7 @@ const LayoutPreview = ({
     }
   };
 
+  // ── API call executor ────────────────────────────────────────────────────────
   const executeApiCall = async (buttonComponent, attributesPayload) => {
     const apiConfig = buttonComponent.api;
     const apiCommon = buttonComponent.apiCommon;
@@ -110,7 +220,6 @@ const LayoutPreview = ({
     try {
       const method = (apiConfig.method || "post").toLowerCase();
       const url = apiConfig.url;
-
       const finalPayload = {
         subChannelId: apiCommon.subChannelId,
         subServiceId: apiCommon.subServiceId,
@@ -118,10 +227,7 @@ const LayoutPreview = ({
         attributes: attributesPayload,
       };
 
-      console.log(`Calling ${method.toUpperCase()} ${url}`, finalPayload);
-
       let result;
-
       switch (method) {
         case "get":
           result = await apiHandler.get(url, finalPayload);
@@ -149,7 +255,7 @@ const LayoutPreview = ({
           apiConfig.successMessage || "Action completed successfully!",
         );
 
-        // ✅ Trigger table refresh using triggerButtonName
+        // Trigger table refresh using triggerButtonName
         if (buttonComponent.name) {
           const tablesToRefresh = [];
           config?.tabs?.forEach((tab) => {
@@ -160,9 +266,7 @@ const LayoutPreview = ({
                     c.type === "table" &&
                     c.triggerButtonName === buttonComponent.name,
                 )
-                .forEach((table) => {
-                  tablesToRefresh.push(table);
-                });
+                .forEach((table) => tablesToRefresh.push(table));
             });
           });
 
@@ -173,25 +277,38 @@ const LayoutPreview = ({
                 [table.name]: Date.now(),
               }));
             });
-
             messageApi.info(`Refreshing ${tablesToRefresh.length} table(s)...`);
           }
         }
 
-        if (apiConfig.resetFormOnSuccess) {
-          Object.keys(attributesPayload).forEach((key) => {
-            onValueChange(key, undefined);
+        // ── Apply response field mappings to form inputs ──────────────────
+        if (buttonComponent.fieldMappings?.length > 0) {
+          let populated = 0;
+          buttonComponent.fieldMappings.forEach((mapping) => {
+            if (!mapping.apiResponseField || !mapping.targetFieldName) return;
+            const val = searchFieldInResponse(result, mapping.apiResponseField);
+            if (val !== undefined && val !== null) {
+              onValueChange(mapping.targetFieldName, val);
+              populated++;
+            }
           });
+          if (populated > 0) {
+            messageApi.success(
+              `${populated} field${populated > 1 ? "s" : ""} populated from response.`,
+            );
+          }
         }
 
-        if (apiConfig.onSuccess) {
-          apiConfig.onSuccess(result);
+        if (apiConfig.resetFormOnSuccess) {
+          Object.keys(attributesPayload).forEach((key) =>
+            onValueChange(key, undefined),
+          );
         }
 
+        if (apiConfig.onSuccess) apiConfig.onSuccess(result);
         return result;
       } else {
-        const errorMsg = apiConfig.errorMessage || "Failed to execute action.";
-        messageApi.error(errorMsg);
+        messageApi.error(apiConfig.errorMessage || "Failed to execute action.");
       }
     } catch (err) {
       hideLoading();
@@ -208,194 +325,296 @@ const LayoutPreview = ({
     return <>{contextHolder}</>;
   }
 
+  // ── Detail view (master-detail navigation) ───────────────────────────────────
+  if (detailView) {
+    return (
+      <>
+        {contextHolder}
+        <style>{`
+          @keyframes slideInFromRight { from { opacity:0; transform:translateX(32px); } to { opacity:1; transform:translateX(0); } }
+          .lp-detail-enter { animation: slideInFromRight 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+        `}</style>
+        <div style={{ padding: "20px" }} className="lp-detail-enter">
+          <button
+            onClick={() => setDetailView(null)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 18,
+              padding: "7px 16px",
+              borderRadius: 8,
+              border: "1.5px solid #e2e8f0",
+              background: "#fff",
+              color: "#475569",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              boxShadow: "0 1px 4px rgba(15,23,42,0.07)",
+            }}
+          >
+            <ArrowLeft size={14} /> Back
+          </button>
+          <LayoutPreview
+            config={detailView.config}
+            formValues={detailView.formValues}
+            onValueChange={(name, val) =>
+              setDetailView((prev) => ({
+                ...prev,
+                formValues: { ...prev.formValues, [name]: val },
+              }))
+            }
+            hideBackButton
+          />
+        </div>
+      </>
+    );
+  }
+
+  // ── Section renderer ─────────────────────────────────────────────────────────
+  const renderSection = (section) => (
+    <div key={section.id} style={sectionCard}>
+      {/* Section header */}
+      <div style={sectionHeaderBar}>
+        <div style={sectionAccent} />
+        <h3 style={sectionTitle}>{section.name}</h3>
+      </div>
+
+      {/* Components */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: `${section.layout.gutter ?? 12}px`,
+          padding: "4px 10px",
+        }}
+      >
+        {section.components.map((c, index) => {
+          // ── Buttons — grouped and centred ──────────────────────────────────
+          if (c.type === "button") {
+            const prev = index > 0 ? section.components[index - 1] : null;
+            if (!prev || prev.type !== "button") {
+              const group = [];
+              for (let i = index; i < section.components.length; i++) {
+                if (section.components[i].type !== "button") break;
+                group.push(section.components[i]);
+              }
+              if (group[0].id === c.id) {
+                return (
+                  <div
+                    key={`btn-group-${index}`}
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      flexWrap: "wrap",
+                      gap: `${section.layout.gutter ?? 12}px`,
+                      paddingTop: 8,
+                    }}
+                  >
+                    {group.map((btnComp) => (
+                      <ComponentRenderer
+                        key={btnComp.id}
+                        component={btnComp}
+                        value={formValues[btnComp.name]}
+                        onValueChange={onValueChange}
+                        onBtnClick={() => handleAction(section, btnComp)}
+                        onRowAction={handleTableRowAction}
+                        onViewDetails={handleViewDetails}
+                        disabled={isSubmitting}
+                      />
+                    ))}
+                  </div>
+                );
+              }
+            }
+            return null;
+          }
+
+          // ── Full-width singletons ─────────────────────────────────────────
+          if (
+            c.type === "divider" ||
+            c.type === "table" ||
+            c.type === "newline"
+          ) {
+            return (
+              <div key={c.id} style={{ width: "100%" }}>
+                <ComponentRenderer
+                  component={c}
+                  value={formValues[c.name]}
+                  onValueChange={onValueChange}
+                  onBtnClick={() => handleAction(section, c)}
+                  onRowAction={handleTableRowAction}
+                  onViewDetails={handleViewDetails}
+                  refreshTrigger={tableRefreshTriggers[c.name]}
+                  disabled={isSubmitting}
+                />
+              </div>
+            );
+          }
+
+          // ── Responsive grid group ─────────────────────────────────────────
+          if (
+            c.type !== "divider" &&
+            c.type !== "table" &&
+            c.type !== "newline" &&
+            c.type !== "button"
+          ) {
+            const prev = index > 0 ? section.components[index - 1] : null;
+            const isNewGroup =
+              !prev ||
+              prev.type === "divider" ||
+              prev.type === "table" ||
+              prev.type === "newline" ||
+              prev.type === "button";
+
+            if (isNewGroup) {
+              const group = [];
+              for (let i = index; i < section.components.length; i++) {
+                const comp = section.components[i];
+                if (
+                  comp.type === "divider" ||
+                  comp.type === "table" ||
+                  comp.type === "newline" ||
+                  comp.type === "button"
+                )
+                  break;
+                group.push(comp);
+              }
+
+              if (group[0].id === c.id) {
+                return (
+                  <div
+                    key={`grid-${index}`}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: getResponsiveGridTemplate(
+                        section.layout.columns,
+                      ),
+                      gap: `${section.layout.gutter ?? 12}px`,
+                    }}
+                  >
+                    {group.map((gridComp) => (
+                      <ComponentRenderer
+                        key={gridComp.id}
+                        component={gridComp}
+                        value={formValues[gridComp.name]}
+                        onValueChange={onValueChange}
+                        onBtnClick={() => handleAction(section, gridComp)}
+                        onRowAction={handleTableRowAction}
+                        onViewDetails={handleViewDetails}
+                        disabled={isSubmitting}
+                      />
+                    ))}
+                  </div>
+                );
+              }
+            }
+          }
+
+          return null;
+        })}
+      </div>
+    </div>
+  );
+
+  // ── Tab items ────────────────────────────────────────────────────────────────
   const tabItems = config.tabs.map((tab) => ({
     key: tab.id.toString(),
     label: tab.title,
     children: (
-      <div className="p-2">
-        {tab.sections.map((section) => (
-          <div
-            key={section.id}
-            className="mb-3 bg-white p-6 rounded-xl shadow-sm border border-slate-100"
-          >
-            <h3 className="text-lg font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2">
-              {section.name}
-            </h3>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: `${section.layout.gutter}px`,
-              }}
-            >
-              {section.components.map((c, index) => {
-                if (c.type === "button") {
-                  const prevComponent =
-                    index > 0 ? section.components[index - 1] : null;
-                  const isNewButtonGroup =
-                    !prevComponent || prevComponent.type !== "button";
-
-                  if (isNewButtonGroup) {
-                    const buttonComponents = [];
-                    for (let i = index; i < section.components.length; i++) {
-                      const comp = section.components[i];
-                      if (comp.type !== "button") {
-                        break;
-                      }
-                      buttonComponents.push(comp);
-                    }
-
-                    if (buttonComponents[0].id === c.id) {
-                      return (
-                        <div
-                          key={`button-group-${index}`}
-                          className="w-full flex justify-center"
-                          style={{ gap: `${section.layout.gutter}px` }}
-                        >
-                          {buttonComponents.map((btnComp) => (
-                            <ComponentRenderer
-                              key={btnComp.id}
-                              component={btnComp}
-                              value={formValues[btnComp.name]}
-                              onValueChange={onValueChange}
-                              onBtnClick={() => handleAction(section, btnComp)}
-                              onRowAction={(tableComp, rowData) =>
-                                handleTableRowAction(tableComp, rowData)
-                              }
-                              disabled={isSubmitting}
-                            />
-                          ))}
-                        </div>
-                      );
-                    }
-                  }
-
-                  return null;
-                }
-
-                if (
-                  c.type === "divider" ||
-                  c.type === "table" ||
-                  c.type === "newline"
-                ) {
-                  return (
-                    <div key={c.id} className="w-full">
-                      <ComponentRenderer
-                        component={c}
-                        value={formValues[c.name]}
-                        onValueChange={onValueChange}
-                        onBtnClick={() => handleAction(section, c)}
-                        onRowAction={(tableComp, rowData) =>
-                          handleTableRowAction(tableComp, rowData)
-                        }
-                        refreshTrigger={tableRefreshTriggers[c.name]}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                  );
-                }
-
-                if (
-                  c.type !== "divider" &&
-                  c.type !== "table" &&
-                  c.type !== "newline" &&
-                  c.type !== "button"
-                ) {
-                  const prevComponent =
-                    index > 0 ? section.components[index - 1] : null;
-                  const isNewGridGroup =
-                    !prevComponent ||
-                    prevComponent.type === "divider" ||
-                    prevComponent.type === "table" ||
-                    prevComponent.type === "newline" ||
-                    prevComponent.type === "button";
-
-                  if (isNewGridGroup) {
-                    const gridComponents = [];
-                    for (let i = index; i < section.components.length; i++) {
-                      const comp = section.components[i];
-                      if (
-                        comp.type === "divider" ||
-                        comp.type === "table" ||
-                        comp.type === "newline" ||
-                        comp.type === "button"
-                      ) {
-                        break;
-                      }
-                      gridComponents.push(comp);
-                    }
-
-                    if (gridComponents[0].id === c.id) {
-                      return (
-                        <div
-                          key={`grid-${index}`}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: `repeat(${section.layout.columns}, 1fr)`,
-                            gap: `${section.layout.gutter}px`,
-                          }}
-                        >
-                          {gridComponents.map((gridComp) => (
-                            <div key={gridComp.id}>
-                              <ComponentRenderer
-                                component={gridComp}
-                                value={formValues[gridComp.name]}
-                                onValueChange={onValueChange}
-                                onBtnClick={() =>
-                                  handleAction(section, gridComp)
-                                }
-                                onRowAction={(tableComp, rowData) =>
-                                  handleTableRowAction(tableComp, rowData)
-                                }
-                                disabled={isSubmitting}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-                  }
-                }
-
-                return null;
-              })}
-            </div>
-          </div>
-        ))}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          padding: "4px 2px",
+        }}
+      >
+        {tab.sections.map(renderSection)}
       </div>
     ),
   }));
 
+  // ── Main render ──────────────────────────────────────────────────────────────
   return (
     <>
       {contextHolder}
-      <div>
+
+      {/* Scoped CSS for smooth Ant Design tab bar */}
+      <style>{`
+        .lp-page-header { padding: 20px 24px 0; }
+        .lp-tabs .ant-tabs-nav { padding: 0 24px; background: transparent; }
+        .lp-tabs .ant-tabs-tab { font-weight: 500; font-size: 13.5px; padding: 12px 4px; }
+        .lp-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { color: #6366f1 !important; }
+        .lp-tabs .ant-tabs-ink-bar { background: #6366f1; border-radius: 2px; }
+        .lp-tabs .ant-tabs-content-holder { padding: 16px 20px 20px; }
+      `}</style>
+
+      <div style={pageWrap}>
+        {/* Back button */}
         {!hideBackButton && (
           <Button
             onClick={onBack}
             icon={<ArrowLeft size={14} />}
             disabled={isSubmitting}
-            className="mb-6 h-10 px-5 shadow-sm border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-500"
+            style={backBtn}
           >
             Back to Editor
           </Button>
         )}
 
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-            {config.title}
-          </h1>
-          {config.description && (
-            <p className="text-slate-500 text-lg">{config.description}</p>
-          )}
-        </div>
+        {/* Page title */}
+        {config.title && (
+          <div style={pageTitleWrap}>
+            <h1 style={pageTitleStyle}>{config.title}</h1>
+            {config.description && (
+              <p style={pageDescStyle}>{config.description}</p>
+            )}
+          </div>
+        )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden px-4">
+        {/* Header Cards (Optional) */}
+        {config.headerCards && config.headerCards.length > 0 && (
+          <div style={{ marginBottom: "8px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(auto-fit, minmax(150px, 1fr))`,
+                gap: "12px",
+                width: "100%",
+              }}
+            >
+              {config.headerCards.map((card, idx) => {
+                const val = formValues[card.fieldName];
+                return (
+                  <div
+                    key={idx}
+                    className="rounded-2xl p-[2px] bg-gradient-to-br from-green-200 via-cyan-500 to-blue-500 shadow-sm hover:shadow-md transition-all duration-300"
+                  >
+                    <div className="rounded-[14px] bg-white p-3 h-full flex flex-col justify-center">
+                      <div className="text-[10px] font-bold text-slate-500 tracking-wide uppercase">
+                        {card.label}
+                      </div>
+                      <div className="text-[15px] font-bold text-slate-800 mt-[2px] truncate">
+                        {val !== undefined && val !== null && val !== ""
+                          ? String(val)
+                          : "-"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tab container */}
+
+        <div style={tabContainer}>
           <Tabs
             items={tabItems}
             type="line"
-            className=""
+            className="lp-tabs"
             disabled={isSubmitting}
             tabBarStyle={{ marginBottom: 0 }}
           />
@@ -403,6 +622,90 @@ const LayoutPreview = ({
       </div>
     </>
   );
+};
+
+// ── Styles ─────────────────────────────────────────────────────────────────────
+
+const pageWrap = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "16px",
+  padding: "20px",
+  minHeight: "100%",
+};
+
+const backBtn = {
+  alignSelf: "flex-start",
+  height: 36,
+  paddingInline: 16,
+  borderRadius: 8,
+  borderColor: "#e2e8f0",
+  color: "#64748b",
+  fontWeight: 500,
+};
+
+const pageTitleWrap = {
+  paddingBottom: "4px",
+};
+
+const pageTitleStyle = {
+  margin: 0,
+  fontSize: "22px",
+  fontWeight: 800,
+  color: "#0f172a",
+  letterSpacing: "-0.02em",
+};
+
+const pageDescStyle = {
+  margin: "6px 0 0",
+  fontSize: "14px",
+  color: "#64748b",
+  lineHeight: 1.6,
+};
+
+const tabContainer = {
+  background: "#fff",
+  borderRadius: "14px",
+  border: "1px solid #e8edf2",
+  boxShadow: "0 2px 12px rgba(15, 23, 42, 0.06)",
+  overflow: "hidden",
+};
+
+// Section
+const sectionCard = {
+  background: "#fff",
+  borderRadius: "12px",
+  border: "1px solid #eef0f6",
+  boxShadow: "0 1px 6px rgba(15, 23, 42, 0.05)",
+  overflow: "hidden",
+  padding: "0 0 18px",
+};
+
+const sectionHeaderBar = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "14px 18px",
+  borderBottom: "1px solid #f1f5f9",
+  background: "linear-gradient(90deg, #f8faff 0%, #fff 100%)",
+  marginBottom: "12px",
+};
+
+const sectionAccent = {
+  width: "3px",
+  height: "18px",
+  borderRadius: "3px",
+  background: "linear-gradient(180deg, #6366f1, #0d9488)",
+  flexShrink: 0,
+};
+
+const sectionTitle = {
+  margin: 0,
+  fontSize: "13.5px",
+  fontWeight: 700,
+  color: "#1e293b",
+  letterSpacing: "0.01em",
+  flex: 1,
 };
 
 export default LayoutPreview;

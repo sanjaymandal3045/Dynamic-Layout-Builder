@@ -167,6 +167,17 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
     });
   };
 
+  const updateViewDetailsState = (currentObj) => {
+    setFormData((prev) => ({
+      ...prev,
+      rowActions: {
+        ...prev.rowActions,
+        viewDetailsConfig: currentObj,
+        viewDetailsConfigText: currentObj === undefined ? undefined : JSON.stringify(currentObj, null, 2),
+      },
+    }));
+  };
+
   const updateTableApiField = (key, value) => {
     setFormData({
       ...formData,
@@ -764,6 +775,122 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                     <p className="text-red-500 text-xs mt-1">{errors.traceNo}</p>
                   )}
                 </div>
+
+                {/* ── Response Field Mappings ─────────────────────── */}
+                <Divider />
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h4 className="font-semibold text-slate-800 mb-0.5">
+                        Response Field Mappings
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        After a successful API call, map response fields to form inputs automatically.
+                      </p>
+                    </div>
+                    <Button
+                      type="dashed"
+                      size="small"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        const newMapping = {
+                          id: Date.now(),
+                          apiResponseField: "",
+                          targetFieldName: "",
+                        };
+                        updateField("fieldMappings", [
+                          ...(formData.fieldMappings || []),
+                          newMapping,
+                        ]);
+                      }}
+                    >
+                      Add Mapping
+                    </Button>
+                  </div>
+
+                  {(formData.fieldMappings || []).length === 0 && (
+                    <p className="text-xs text-slate-400 italic py-2 text-center border border-dashed border-slate-200 rounded-lg">
+                      No mappings yet — add one above to auto-fill fields from the response.
+                    </p>
+                  )}
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto mt-2">
+                    {(formData.fieldMappings || []).map((mapping, index) => (
+                      <div
+                        key={mapping.id}
+                        className="p-3 bg-green-50 rounded border border-green-200 hover:border-green-400 space-y-2 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                            Mapping {index + 1}
+                          </span>
+                          <Button
+                            type="text"
+                            danger
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={() => {
+                              updateField(
+                                "fieldMappings",
+                                (formData.fieldMappings || []).filter(
+                                  (_, i) => i !== index
+                                )
+                              );
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-slate-600 block mb-1">
+                            API Response Field Name
+                          </label>
+                          <Input
+                            size="small"
+                            placeholder="e.g. customerName"
+                            value={mapping.apiResponseField || ""}
+                            onChange={(e) => {
+                              updateField(
+                                "fieldMappings",
+                                (formData.fieldMappings || []).map((m, i) =>
+                                  i === index
+                                    ? { ...m, apiResponseField: e.target.value }
+                                    : m
+                                )
+                              );
+                            }}
+                          />
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            Exact key from the API response (deep search supported)
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-slate-600 block mb-1">
+                            Target Field Name
+                          </label>
+                          <Input
+                            size="small"
+                            placeholder="e.g. customerName or field_123"
+                            value={mapping.targetFieldName || ""}
+                            onChange={(e) => {
+                              updateField(
+                                "fieldMappings",
+                                (formData.fieldMappings || []).map((m, i) =>
+                                  i === index
+                                    ? { ...m, targetFieldName: e.target.value }
+                                    : m
+                                )
+                              );
+                            }}
+                          />
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            The form field's name to populate with this value
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
           </>
@@ -1168,12 +1295,289 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                     Show Delete Button
                   </Checkbox>
                 </div>
+
+                {/* ── View Details Button ─────────────────────── */}
+                <div className="flex items-center">
+                  <Checkbox
+                    checked={formData.rowActions?.showViewDetails}
+                    onChange={(e) =>
+                      updateTableRowAction("showViewDetails", e.target.checked)
+                    }
+                  >
+                    Show View Details Button
+                  </Checkbox>
+                </div>
+
+                {formData.rowActions?.showViewDetails && (
+                  <div className="ml-6 p-3 bg-purple-50 rounded-lg border border-purple-200 space-y-3">
+                    <p className="text-xs text-purple-700">
+                      Calls an API with the row data. The response can populate fields across <strong>all tabs</strong>.
+                    </p>
+
+                    {/* Button Label */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Button Label</label>
+                      <Input
+                        size="small"
+                        placeholder="e.g. View Details"
+                        value={formData.rowActions?.viewDetailsLabel || "View Details"}
+                        onChange={(e) => updateTableRowAction("viewDetailsLabel", e.target.value)}
+                      />
+                    </div>
+
+                    {/* API URL */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">API Endpoint URL <span className="text-red-500">*</span></label>
+                      <Input
+                        size="small"
+                        placeholder="/transaction/execute"
+                        value={formData.rowActions?.viewDetailsApi?.url || ""}
+                        onChange={(e) => updateTableRowAction("viewDetailsApi", {
+                          ...formData.rowActions?.viewDetailsApi,
+                          url: e.target.value,
+                        })}
+                      />
+                    </div>
+
+                    {/* Sub Channel ID */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Sub Channel ID <span className="text-red-500">*</span></label>
+                      <Select
+                        size="small"
+                        style={{ width: "100%" }}
+                        popupMatchSelectWidth={false}
+                        placeholder="Select channel"
+                        value={formData.rowActions?.viewDetailsApi?.subChannelId}
+                        options={SUBCHANNEL_OPTIONS}
+                        onChange={(v) => updateTableRowAction("viewDetailsApi", {
+                          ...formData.rowActions?.viewDetailsApi,
+                          subChannelId: v,
+                        })}
+                      />
+                    </div>
+
+                    {/* Sub Service ID */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Sub Service ID <span className="text-red-500">*</span></label>
+                      <Select
+                        size="small"
+                        style={{ width: "100%" }}
+                        popupMatchSelectWidth={false}
+                        placeholder="Select service"
+                        value={formData.rowActions?.viewDetailsApi?.subServiceId}
+                        options={SUBSERVICE_OPTIONS}
+                        onChange={(v) => updateTableRowAction("viewDetailsApi", {
+                          ...formData.rowActions?.viewDetailsApi,
+                          subServiceId: v,
+                        })}
+                      />
+                    </div>
+
+                    {/* Trace No */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Trace No <span className="text-red-500">*</span></label>
+                      <Input
+                        size="small"
+                        placeholder="e.g. REQ-VIEW-DETAIL"
+                        value={formData.rowActions?.viewDetailsApi?.traceNo || ""}
+                        onChange={(e) => updateTableRowAction("viewDetailsApi", {
+                          ...formData.rowActions?.viewDetailsApi,
+                          traceNo: e.target.value,
+                        })}
+                      />
+                    </div>
+
+                    <Divider style={{ margin: "8px 0" }} />
+
+                    {/* Field Mappings */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-semibold text-slate-700">Response Field Mappings</label>
+                        <Button
+                          type="dashed"
+                          size="small"
+                          icon={<PlusOutlined />}
+                          onClick={() => {
+                            const newMapping = { id: Date.now(), apiResponseField: "", targetFieldName: "" };
+                            updateTableRowAction("viewDetailsFieldMappings", [
+                              ...(formData.rowActions?.viewDetailsFieldMappings || []),
+                              newMapping,
+                            ]);
+                          }}
+                        >
+                          Add Mapping
+                        </Button>
+                      </div>
+
+                      {(formData.rowActions?.viewDetailsFieldMappings || []).length === 0 && (
+                        <p className="text-[10px] text-slate-400 italic text-center py-1 border border-dashed border-slate-200 rounded">
+                          No mappings — add one to populate fields from response.
+                        </p>
+                      )}
+
+                      <div className="space-y-2 max-h-48 overflow-y-auto mt-1">
+                        {(formData.rowActions?.viewDetailsFieldMappings || []).map((mapping, idx) => (
+                          <div key={mapping.id} className="p-2 bg-white rounded border border-purple-200 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-semibold text-purple-600">Mapping {idx + 1}</span>
+                              <Button
+                                type="text" danger size="small"
+                                icon={<DeleteOutlined />}
+                                onClick={() => updateTableRowAction("viewDetailsFieldMappings",
+                                  (formData.rowActions?.viewDetailsFieldMappings || []).filter((_, i) => i !== idx)
+                                )}
+                              />
+                            </div>
+                            <Input
+                              size="small"
+                              placeholder="API response field (e.g. customerName)"
+                              value={mapping.apiResponseField || ""}
+                              onChange={(e) => updateTableRowAction("viewDetailsFieldMappings",
+                                (formData.rowActions?.viewDetailsFieldMappings || []).map((m, i) =>
+                                  i === idx ? { ...m, apiResponseField: e.target.value } : m
+                                )
+                              )}
+                            />
+                            <Input
+                              size="small"
+                              placeholder="Target form field name"
+                              value={mapping.targetFieldName || ""}
+                              onChange={(e) => updateTableRowAction("viewDetailsFieldMappings",
+                                (formData.rowActions?.viewDetailsFieldMappings || []).map((m, i) =>
+                                  i === idx ? { ...m, targetFieldName: e.target.value } : m
+                                )
+                              )}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             <Divider />
 
-            {/* ✅ Trigger Button Name Configuration - Simple Text Field */}
+            {/* View Details Layout Config */}
+            {formData.rowActions?.showViewDetails && (
+              <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      Detail View Layout Config <span className="text-slate-400 font-normal text-xs">(optional)</span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-3">
+                    Configure the title, header cards, and paste JSON for tabs. Clicking "View Details" will slide in a
+                    new page rendered from this config.
+                  </p>
+
+                  {/* VISUAL BUILDER FOR COMMON PROPERTIES */}
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 space-y-3">
+                    <div className="flex flex-col">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Config Title</label>
+                      <Input
+                        size="small"
+                        placeholder="e.g. Customer Details"
+                        value={formData.rowActions?.viewDetailsConfig?.title || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          let currentObj = formData.rowActions?.viewDetailsConfig || {};
+                          currentObj = { ...currentObj, title: val };
+                          updateViewDetailsState(currentObj);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Header Cards</label>
+                        <Button 
+                          type="dashed" size="small" 
+                          icon={<PlusOutlined />}
+                          onClick={() => {
+                            let cards = [...(formData.rowActions?.viewDetailsConfig?.headerCards || [])];
+                            cards.push({ label: "", fieldName: "" });
+                            let currentObj = { ...(formData.rowActions?.viewDetailsConfig || {}), headerCards: cards };
+                            updateViewDetailsState(currentObj);
+                          }}
+                        >
+                          Add Card
+                        </Button>
+                      </div>
+                      
+                      {(formData.rowActions?.viewDetailsConfig?.headerCards || []).map((card, idx) => (
+                        <div key={idx} className="flex gap-2 mb-2 items-center bg-white p-2 border border-slate-100 rounded">
+                          <Input size="small" placeholder="Label (e.g. BRANCH)" value={card.label} 
+                            onChange={(e) => {
+                              let cards = [...(formData.rowActions?.viewDetailsConfig?.headerCards || [])];
+                              cards[idx] = { ...cards[idx], label: e.target.value };
+                              let currentObj = { ...(formData.rowActions?.viewDetailsConfig || {}), headerCards: cards };
+                              updateViewDetailsState(currentObj);
+                            }} 
+                          />
+                          <Input size="small" placeholder="Value Field (e.g. branchNo)" value={card.fieldName} 
+                            onChange={(e) => {
+                              let cards = [...(formData.rowActions?.viewDetailsConfig?.headerCards || [])];
+                              cards[idx] = { ...cards[idx], fieldName: e.target.value };
+                              let currentObj = { ...(formData.rowActions?.viewDetailsConfig || {}), headerCards: cards };
+                              updateViewDetailsState(currentObj);
+                            }} 
+                          />
+                          <Button size="small" danger type="text" icon={<DeleteOutlined />} 
+                            onClick={() => {
+                              let cards = [...(formData.rowActions?.viewDetailsConfig?.headerCards || [])];
+                              cards.splice(idx, 1);
+                              if (cards.length === 0) cards = undefined;
+                              let currentObj = { ...(formData.rowActions?.viewDetailsConfig || {}) };
+                              if (cards) currentObj.headerCards = cards; else delete currentObj.headerCards;
+                              updateViewDetailsState(currentObj);
+                            }} 
+                          />
+                        </div>
+                      ))}
+                      {(formData.rowActions?.viewDetailsConfig?.headerCards || []).length === 0 && (
+                        <div className="text-[10px] text-slate-400 italic text-center py-2 border border-dashed border-slate-200 bg-white rounded">
+                          No header cards added
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Raw JSON View</label>
+                  <Input.TextArea
+                    rows={8}
+                    placeholder={'{\n  "title": "Customer Details",\n  "headerCards": [...],\n  "tabs": [{\n    "id": 1, "title": "Details",\n    "sections": [...]\n  }]\n}'}
+                    value={
+                      formData.rowActions?.viewDetailsConfigText ??
+                      (formData.rowActions?.viewDetailsConfig
+                        ? JSON.stringify(formData.rowActions.viewDetailsConfig, null, 2)
+                        : "")
+                    }
+                    onChange={(e) => {
+                      const text = e.target.value;
+                      updateTableRowAction("viewDetailsConfigText", text);
+                      try {
+                        const parsed = JSON.parse(text);
+                        // Make sure we carry over valid tabs if present
+                        if (parsed) updateTableRowAction("viewDetailsConfig", parsed);
+                      } catch {
+                        // silent — let user keep typing
+                      }
+                    }}
+                    style={{ fontFamily: "monospace", fontSize: 11 }}
+                  />
+                {formData.rowActions?.viewDetailsConfig?.tabs?.length > 0 && (
+                  <p className="text-[10px] text-green-600 mt-1 font-semibold">
+                    ✓ Valid — {formData.rowActions.viewDetailsConfig.tabs.length} tab(s) detected
+                  </p>
+                )}
+              </div>
+            )}
+
+            <Divider />
+
+            {/* ✅ Trigger Button Name Configuration */}
             <div>
               <label className="block text-sm font-semibold mb-2 text-slate-700">
                 Trigger Button Name (Optional)

@@ -94,6 +94,21 @@ const layoutSlice = createSlice({
         [section.components[targetIndex], section.components[index]];
       }
     },
+    moveSection: (state, action) => {
+      const { tabId, sectionId, direction } = action.payload;
+      const tab = state.config.tabs.find(t => t.id === tabId);
+      if (!tab) return;
+
+      const index = tab.sections.findIndex(s => s.id === sectionId);
+      if (index === -1) return;
+
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= tab.sections.length) return;
+
+      // Swap sections
+      [tab.sections[index], tab.sections[targetIndex]] =
+      [tab.sections[targetIndex], tab.sections[index]];
+    },
     saveComponentConfig: (state, action) => {
       const { sectionId, updatedComponent } = action.payload;
       // We search all tabs to find the section and component
@@ -111,8 +126,8 @@ const layoutSlice = createSlice({
 export const { 
   addTab, removeTab, renameTab, addSection, 
   updateSection, removeSection, addComponent, 
-  removeComponent, moveComponent, saveComponentConfig, 
-  setConfig 
+  removeComponent, moveComponent, moveSection,
+  saveComponentConfig, setConfig 
 } = layoutSlice.actions;
 
 export default layoutSlice.reducer;
