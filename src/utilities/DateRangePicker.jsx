@@ -10,12 +10,12 @@ const DateRangePicker = ({
   isSingleOnly = false,
 }) => {
   const [datePickerType, setDatePickerType] = useState(
-    isSingleOnly ? "single" : defaultType
+    isSingleOnly ? "single" : defaultType,
   );
 
   const [baseDate, setBaseDate] = useState(dayjs().subtract(1, "day"));
   const [comparisonDate, setComparisonDate] = useState(
-    dayjs().subtract(2, "day")
+    dayjs().subtract(2, "day"),
   );
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const DateRangePicker = ({
   return (
     <Card
       className="h-full border-0 shadow-lg rounded-2xl"
-      bodyStyle={{ padding: "0px" }}
+      styles={{ body: { padding: "0px" } }}
     >
       <div
         style={{

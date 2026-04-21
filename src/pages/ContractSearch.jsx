@@ -108,13 +108,16 @@ const ContractSearch = () => {
   const [selectedContract, setSelectedContract] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const searchOptions = useMemo(() => [
-    { label: "Contract No", value: "contractNo" },
-    { label: "Branch Code", value: "branchNo" },
-    { label: "Product Code", value: "productCode" },
-    { label: "Borrower Name", value: "borrowerName" },
-    { label: "Loan ID No", value: "loanIdNo" },
-  ], []);
+  const searchOptions = useMemo(
+    () => [
+      { label: "Contact No", value: "contractNo" },
+      { label: "Branch Code", value: "branchNo" },
+      { label: "Product Code", value: "productCode" },
+      { label: "Borrower Name", value: "borrowerName" },
+      { label: "Loan ID No", value: "loanIdNo" },
+    ],
+    [],
+  );
 
   // Add a new filter row
   const handleAddFilter = useCallback(() => {
@@ -126,22 +129,25 @@ const ContractSearch = () => {
   }, [nextFilterId]);
 
   // Remove a filter row
-  const handleRemoveFilter = useCallback((filterId) => {
-    setFilters((prevFilters) => {
-      if (prevFilters.length === 1) {
-        messageApi.warning("You must have at least one filter");
-        return prevFilters;
-      }
-      return prevFilters.filter((f) => f.id !== filterId);
-    });
-  }, [messageApi]);
+  const handleRemoveFilter = useCallback(
+    (filterId) => {
+      setFilters((prevFilters) => {
+        if (prevFilters.length === 1) {
+          messageApi.warning("You must have at least one filter");
+          return prevFilters;
+        }
+        return prevFilters.filter((f) => f.id !== filterId);
+      });
+    },
+    [messageApi],
+  );
 
   // Update filter value
   const handleUpdateFilter = useCallback((filterId, field, value) => {
     setFilters((prevFilters) =>
       prevFilters.map((f) =>
-        f.id === filterId ? { ...f, [field]: value } : f
-      )
+        f.id === filterId ? { ...f, [field]: value } : f,
+      ),
     );
   }, []);
 
@@ -200,58 +206,61 @@ const ContractSearch = () => {
   }, [messageApi]);
 
   // Memoize columns to prevent unnecessary re-renders
-  const columns = useMemo(() => [
-    {
-      title: "Action",
-      key: "action",
-      width: 100,
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => handleViewDetails(record)}
-        >
-          View Details
-        </Button>
-      ),
-    },
-    {
-      title: "Contract No",
-      dataIndex: "contractNo",
-      key: "contractNo",
-      width: 140,
-      sorter: (a, b) => a.contractNo.localeCompare(b.contractNo),
-    },
-    {
-      title: "Branch No",
-      dataIndex: "branchNo",
-      key: "branchNo",
-      width: 140,
-      sorter: (a, b) => a.branchNo.localeCompare(b.branchNo),
-    },
-    {
-      title: "Product Code",
-      dataIndex: "productCode",
-      key: "productCode",
-      width: 140,
-      sorter: (a, b) => a.productCode.localeCompare(b.productCode),
-    },
-    {
-      title: "Name of Borrower",
-      dataIndex: "borrowerName",
-      key: "borrowerName",
-      width: 140,
-      sorter: (a, b) => a.borrowerName.localeCompare(b.borrowerName),
-    },
-    {
-      title: "Loan ID No",
-      dataIndex: "loanIdNo",
-      key: "loanIdNo",
-      width: 140,
-      sorter: (a, b) => a.loanIdNo.localeCompare(b.loanIdNo),
-    },
-  ], [handleViewDetails]);
+  const columns = useMemo(
+    () => [
+      {
+        title: "Action",
+        key: "action",
+        width: 100,
+        render: (_, record) => (
+          <Button
+            type="primary"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetails(record)}
+          >
+            View Details
+          </Button>
+        ),
+      },
+      {
+        title: "Contact No",
+        dataIndex: "contractNo",
+        key: "contractNo",
+        width: 140,
+        sorter: (a, b) => a.contractNo.localeCompare(b.contractNo),
+      },
+      {
+        title: "Branch No",
+        dataIndex: "branchNo",
+        key: "branchNo",
+        width: 140,
+        sorter: (a, b) => a.branchNo.localeCompare(b.branchNo),
+      },
+      {
+        title: "Product Code",
+        dataIndex: "productCode",
+        key: "productCode",
+        width: 140,
+        sorter: (a, b) => a.productCode.localeCompare(b.productCode),
+      },
+      {
+        title: "Name of Borrower",
+        dataIndex: "borrowerName",
+        key: "borrowerName",
+        width: 140,
+        sorter: (a, b) => a.borrowerName.localeCompare(b.borrowerName),
+      },
+      {
+        title: "Loan ID No",
+        dataIndex: "loanIdNo",
+        key: "loanIdNo",
+        width: 140,
+        sorter: (a, b) => a.loanIdNo.localeCompare(b.loanIdNo),
+      },
+    ],
+    [handleViewDetails],
+  );
 
   // Animation variants
   const searchViewVariants = {
@@ -277,7 +286,7 @@ const ContractSearch = () => {
       <AnimatePresence mode="wait">
         <div style={{ padding: "12px" }}>
           {selectedContract ? (
-            // Contract Details View
+            // contact Details View
             <motion.div
               key="details"
               variants={detailsViewVariants}
@@ -310,7 +319,7 @@ const ContractSearch = () => {
               </motion.div>
             </motion.div>
           ) : (
-            // Contract Search View
+            // Contact Search View
             <motion.div
               key="search"
               variants={searchViewVariants}
@@ -389,7 +398,11 @@ const ContractSearch = () => {
                               <Select
                                 value={filter.searchType}
                                 onChange={(value) =>
-                                  handleUpdateFilter(filter.id, "searchType", value)
+                                  handleUpdateFilter(
+                                    filter.id,
+                                    "searchType",
+                                    value,
+                                  )
                                 }
                                 options={searchOptions}
                                 style={{ width: "100%" }}
@@ -433,7 +446,9 @@ const ContractSearch = () => {
                                   <Button
                                     danger
                                     icon={<DeleteOutlined />}
-                                    onClick={() => handleRemoveFilter(filter.id)}
+                                    onClick={() =>
+                                      handleRemoveFilter(filter.id)
+                                    }
                                     size="small"
                                   />
                                 )}
@@ -445,7 +460,11 @@ const ContractSearch = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <Row gutter={16} justify="center" style={{ marginTop: "16px" }}>
+                    <Row
+                      gutter={16}
+                      justify="center"
+                      style={{ marginTop: "16px" }}
+                    >
                       <Col>
                         <Button
                           type="dashed"

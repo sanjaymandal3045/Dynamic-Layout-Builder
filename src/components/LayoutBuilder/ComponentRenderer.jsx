@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Select,
   Input,
@@ -52,6 +52,17 @@ const ComponentRenderer = ({
   const [tableLoading, setTableLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   const [pageSize, setPageSize] = useState(10);
+  const [searchText, setSearchText] = useState("");
+
+  const filteredTableData = useMemo(() => {
+    if (!searchText) return tableData;
+    const lowerSearch = searchText.toLowerCase();
+    return tableData.filter((item) =>
+      Object.keys(item).some((key) =>
+        String(item[key]).toLowerCase().includes(lowerSearch)
+      )
+    );
+  }, [tableData, searchText]);
 
   const dataTableApi = useApi();
 
@@ -306,7 +317,14 @@ const ComponentRenderer = ({
       case "divider":
         return (
           <div style={{ gridColumn: gc, padding: "0 8px" }}>
-            <Divider style={{ margin: "6px 0", borderColor: "#e8edf2" }} />
+            <Divider
+              dashed={component.dashed}
+              orientation={component.orientation || "center"}
+              plain={component.plain}
+              style={{ margin: "20px 0 10px 0", borderColor: "#106144" }}
+            >
+              {component.title}
+            </Divider>
           </div>
         );
 
@@ -379,7 +397,7 @@ const ComponentRenderer = ({
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                popupMatchSelectWidth
+                popupMatchSelectWidth={false}
               />
             </div>
           </FieldWrap>
@@ -424,8 +442,8 @@ const ComponentRenderer = ({
                     style={{
                       borderRadius: 6,
                       fontWeight: 600,
-                      background: "#7c3aed",
-                      borderColor: "#7c3aed",
+                      background: "rgb(26 98 115)",
+                      borderColor: "rgb(41 102 149)",
                       color: "#fff",
                     }}
                   >
@@ -461,17 +479,32 @@ const ComponentRenderer = ({
 
         return (
           <div style={{ gridColumn: "1 / -1", padding: "0 8px" }}>
-            {component.label && (
-              <div style={{ ...labelStyle, marginBottom: 10 }}>
-                <span style={labelText}>{component.label}</span>
-                {state.isDisabled && (
-                  <LockOutlined style={{ fontSize: 11, color: "#f59e0b" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+              <div>
+                {component.label && (
+                  <div style={{ ...labelStyle, marginBottom: 0 }}>
+                    <span style={labelText}>{component.label}</span>
+                    {state.isDisabled && (
+                      <LockOutlined style={{ fontSize: 11, color: "#f59e0b" }} />
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+              <div>
+                {component.enableSearch !== false && (
+                  <Input.Search
+                    placeholder="Search table records..."
+                    allowClear
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    style={{ width: 260 }}
+                  />
+                )}
+              </div>
+            </div>
             <Table
               columns={tableColumns}
-              dataSource={tableData}
+              dataSource={filteredTableData}
               loading={tableLoading}
               pagination={
                 component.pagination !== false

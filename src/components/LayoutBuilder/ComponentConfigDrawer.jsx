@@ -72,19 +72,22 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
       if (!formData.name) newErrors.name = "Button Name is required for binding";
       if (!formData.label) newErrors.label = "Button text is required";
 
-      // Validate API fields only if action is not "reset"
+      // Validate API fields conditionally if any of them are filled
       if (formData.onClick !== "reset") {
-        if (!formData.api?.url) {
-          newErrors.apiUrl = "API Endpoint URL is required";
-        }
-        if (!formData.apiCommon?.subChannelId) {
-          newErrors.subChannelId = "Sub Channel ID is required";
-        }
-        if (!formData.apiCommon?.subServiceId) {
-          newErrors.subServiceId = "Sub Service ID is required";
-        }
-        if (!formData.apiCommon?.traceNo) {
-          newErrors.traceNo = "Trace No is required";
+        const hasApi = formData.api?.url || formData.apiCommon?.subChannelId || formData.apiCommon?.subServiceId || formData.apiCommon?.traceNo;
+        if (hasApi) {
+          if (!formData.api?.url) {
+            newErrors.apiUrl = "API Endpoint URL is required";
+          }
+          if (!formData.apiCommon?.subChannelId) {
+            newErrors.subChannelId = "Sub Channel ID is required";
+          }
+          if (!formData.apiCommon?.subServiceId) {
+            newErrors.subServiceId = "Sub Service ID is required";
+          }
+          if (!formData.apiCommon?.traceNo) {
+            newErrors.traceNo = "Trace No is required";
+          }
         }
       }
     }
@@ -113,7 +116,17 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
 
   const handleSave = () => {
     if (validate()) {
-      onSave(formData);
+      // Create a clean copy to avoid polluting the final JSON layout schema
+      const cleanData = { ...formData };
+      if (cleanData.rowActions && "viewDetailsConfigText" in cleanData.rowActions) {
+        cleanData.rowActions = { ...cleanData.rowActions };
+        delete cleanData.rowActions.viewDetailsConfigText;
+      }
+      if ("viewDetailsConfigText" in cleanData) {
+        delete cleanData.viewDetailsConfigText;
+      }
+
+      onSave(cleanData);
       setErrors({});
     }
   };
@@ -673,6 +686,20 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
               />
             </div>
 
+            {formData.onClick === "submit" && (
+              <div className="mt-4 mb-2">
+                <Checkbox
+                  checked={formData.skipValidation}
+                  onChange={(e) => updateField("skipValidation", e.target.checked)}
+                >
+                  Skip Empty Field Validation
+                </Checkbox>
+                <p className="text-xs text-slate-500 mt-1 ml-6">
+                  Check this to bypass the "required field" check during form submission.
+                </p>
+              </div>
+            )}
+
             {/* CONDITIONAL API SECTION: Only show if it's NOT a reset button */}
             {formData.onClick !== "reset" && (
               <>
@@ -684,7 +711,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                 {/* API Endpoint */}
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-slate-700">
-                    API Endpoint URL <span className="text-red-500">*</span>
+                    API Endpoint URL (Optional)
                   </label>
                   <Input
                     status={errors.apiUrl ? "error" : ""}
@@ -722,7 +749,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                 {/* Sub Channel ID */}
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-slate-700">
-                    Sub Channel ID <span className="text-red-500">*</span>
+                    Sub Channel ID (Optional)
                   </label>
                   <Select
                     status={errors.subChannelId ? "error" : ""}
@@ -741,7 +768,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                 {/* Sub Service ID */}
                 <div className="mt-4">
                   <label className="block text-sm font-semibold mb-2 text-slate-700">
-                    Sub Service ID <span className="text-red-500">*</span>
+                    Sub Service ID (Optional)
                   </label>
                   <Select
                     status={errors.subServiceId ? "error" : ""}
@@ -760,7 +787,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                 {/* Trace No */}
                 <div className="mt-4">
                   <label className="block text-sm font-semibold mb-2 text-slate-700">
-                    Trace No <span className="text-red-500">*</span>
+                    Trace No (Optional)
                   </label>
                   <Input
                     status={errors.traceNo ? "error" : ""}
@@ -893,6 +920,174 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                 </div>
               </>
             )}
+
+            <Divider />
+            
+            {/* ── Optional Detail View ─────────────────────── */}
+            <div className="flex items-center mb-3">
+              <Checkbox
+                checked={!!formData.viewDetailsConfig}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      viewDetailsConfigText: JSON.stringify({ title: "", tabs: [] }, null, 2),
+                      viewDetailsConfig: { title: "", tabs: [] },
+                    }));
+                  } else {
+                    const copy = { ...formData };
+                    delete copy.viewDetailsConfigText;
+                    delete copy.viewDetailsConfig;
+                    setFormData(copy);
+                  }
+                }}
+              >
+                Enable Nested Detail View onClick
+              </Checkbox>
+            </div>
+
+            {formData.viewDetailsConfig && (
+              <div className="ml-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <p className="text-xs text-purple-700 mb-4 bg-purple-100 p-2 rounded">
+                  If this button has an API config, it will await the request and auto-map this new layout's header cards before sliding in. Otherwise, it simply slides to this view seamlessly.
+                </p>
+
+                {/* VISUAL BUILDER FOR BUTTON DETAIL VIEW */}
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 space-y-3">
+                  <div className="flex flex-col">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Config Title</label>
+                    <Input
+                      size="small"
+                      placeholder="e.g. Details View"
+                      value={formData.viewDetailsConfig?.title || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData((prev) => {
+                          const currentObj = { ...(prev.viewDetailsConfig || {}), title: val };
+                          return {
+                            ...prev,
+                            viewDetailsConfig: currentObj,
+                            viewDetailsConfigText: JSON.stringify(currentObj, null, 2),
+                          };
+                        });
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-col">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Header Cards</label>
+                      <Button 
+                        type="dashed" size="small" 
+                        icon={<PlusOutlined />}
+                        onClick={() => {
+                          setFormData((prev) => {
+                            const cards = [...(prev.viewDetailsConfig?.headerCards || [])];
+                            cards.push({ label: "", fieldName: "" });
+                            const currentObj = { ...(prev.viewDetailsConfig || {}), headerCards: cards };
+                            return {
+                              ...prev,
+                              viewDetailsConfig: currentObj,
+                              viewDetailsConfigText: JSON.stringify(currentObj, null, 2),
+                            };
+                          });
+                        }}
+                      >
+                        Add Card
+                      </Button>
+                    </div>
+                    
+                    {(formData.viewDetailsConfig?.headerCards || []).map((card, idx) => (
+                      <div key={idx} className="flex gap-2 mb-2 items-center bg-white p-2 border border-slate-100 rounded">
+                        <Input size="small" placeholder="Label (e.g. BRANCH)" value={card.label} 
+                          onChange={(e) => {
+                            setFormData((prev) => {
+                              const cards = [...(prev.viewDetailsConfig?.headerCards || [])];
+                              cards[idx] = { ...cards[idx], label: e.target.value };
+                              const currentObj = { ...(prev.viewDetailsConfig || {}), headerCards: cards };
+                              return {
+                                ...prev,
+                                viewDetailsConfig: currentObj,
+                                viewDetailsConfigText: JSON.stringify(currentObj, null, 2),
+                              };
+                            });
+                          }} 
+                        />
+                        <Input size="small" placeholder="Value Field (e.g. branchNo)" value={card.fieldName} 
+                          onChange={(e) => {
+                            setFormData((prev) => {
+                              const cards = [...(prev.viewDetailsConfig?.headerCards || [])];
+                              cards[idx] = { ...cards[idx], fieldName: e.target.value };
+                              const currentObj = { ...(prev.viewDetailsConfig || {}), headerCards: cards };
+                              return {
+                                ...prev,
+                                viewDetailsConfig: currentObj,
+                                viewDetailsConfigText: JSON.stringify(currentObj, null, 2),
+                              };
+                            });
+                          }} 
+                        />
+                        <Button size="small" danger type="text" icon={<DeleteOutlined />} 
+                          onClick={() => {
+                            setFormData((prev) => {
+                              const cards = [...(prev.viewDetailsConfig?.headerCards || [])];
+                              cards.splice(idx, 1);
+                              const currentObj = { ...(prev.viewDetailsConfig || {}) };
+                              if (cards.length > 0) currentObj.headerCards = cards; 
+                              else delete currentObj.headerCards;
+                              return {
+                                ...prev,
+                                viewDetailsConfig: currentObj,
+                                viewDetailsConfigText: JSON.stringify(currentObj, null, 2),
+                              };
+                            });
+                          }} 
+                        />
+                      </div>
+                    ))}
+                    {(formData.viewDetailsConfig?.headerCards || []).length === 0 && (
+                      <div className="text-[10px] text-slate-400 italic text-center py-2 border border-dashed border-slate-200 bg-white rounded">
+                        No header cards added
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Raw JSON View</label>
+                <Input.TextArea
+                  rows={8}
+                  placeholder={'{\n  "title": "Config Details",\n  "headerCards": [...],\n  "tabs": [...]\n}'}
+                  value={
+                    formData.viewDetailsConfigText ??
+                    (formData.viewDetailsConfig
+                      ? JSON.stringify(formData.viewDetailsConfig, null, 2)
+                      : "")
+                  }
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    try {
+                      const parsed = JSON.parse(text);
+                      setFormData((prev) => ({
+                        ...prev,
+                        viewDetailsConfigText: text,
+                        viewDetailsConfig: parsed,
+                      }));
+                    } catch {
+                      setFormData((prev) => ({
+                        ...prev,
+                        viewDetailsConfigText: text,
+                      }));
+                    }
+                  }}
+                  style={{ fontFamily: "monospace", fontSize: 11 }}
+                />
+                {formData.viewDetailsConfig?.tabs?.length > 0 && (
+                  <p className="text-[10px] text-green-600 mt-1 font-semibold">
+                    ✓ Valid — {formData.viewDetailsConfig.tabs.length} tab(s) detected
+                  </p>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -934,6 +1129,67 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
               size="large"
             />
           </div>
+        )}
+
+        {component.type === "divider" && (
+          <>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Divider Name / Key
+              </label>
+              <Input
+                value={formData.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="e.g. div_1 (optional)"
+                size="large"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Unique identifier to prevent re-rendering issues
+              </p>
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Divider Title
+              </label>
+              <Input
+                value={formData.title}
+                onChange={(e) => updateField("title", e.target.value)}
+                placeholder="e.g. Section Title"
+                size="large"
+              />
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-semibold mb-2 text-slate-700">
+                Title Alignment
+              </label>
+              <Select
+                popupMatchSelectWidth={false}
+                value={formData.orientation || "center"}
+                options={[
+                  { value: "left", label: "Left" },
+                  { value: "center", label: "Center" },
+                  { value: "right", label: "Right" },
+                ]}
+                onChange={(v) => updateField("orientation", v)}
+                size="large"
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-center gap-4 mt-4">
+              <Checkbox
+                checked={formData.dashed}
+                onChange={(e) => updateField("dashed", e.target.checked)}
+              >
+                Dashed Line
+              </Checkbox>
+              <Checkbox
+                checked={formData.plain}
+                onChange={(e) => updateField("plain", e.target.checked)}
+              >
+                Plain Text
+              </Checkbox>
+            </div>
+          </>
         )}
 
         {formData.type === "select" && (
@@ -1556,13 +1812,24 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave, config }) => 
                     }
                     onChange={(e) => {
                       const text = e.target.value;
-                      updateTableRowAction("viewDetailsConfigText", text);
                       try {
                         const parsed = JSON.parse(text);
-                        // Make sure we carry over valid tabs if present
-                        if (parsed) updateTableRowAction("viewDetailsConfig", parsed);
+                        setFormData((prev) => ({
+                          ...prev,
+                          rowActions: {
+                            ...prev.rowActions,
+                            viewDetailsConfigText: text,
+                            viewDetailsConfig: parsed,
+                          },
+                        }));
                       } catch {
-                        // silent — let user keep typing
+                        setFormData((prev) => ({
+                          ...prev,
+                          rowActions: {
+                            ...prev.rowActions,
+                            viewDetailsConfigText: text,
+                          },
+                        }));
                       }
                     }}
                     style={{ fontFamily: "monospace", fontSize: 11 }}

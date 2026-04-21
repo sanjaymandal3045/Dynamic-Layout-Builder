@@ -167,7 +167,7 @@ const LayoutPreview = ({
       return;
     }
 
-    if (buttonComponent.onClick === "submit") {
+    if (buttonComponent.onClick === "submit" || buttonComponent.viewDetailsConfig) {
       const payload = {};
       let hasMissingRequired = false;
 
@@ -183,12 +183,19 @@ const LayoutPreview = ({
         payload[name] = val;
       });
 
-      if (hasMissingRequired) {
+      if (!buttonComponent.skipValidation && hasMissingRequired) {
         messageApi.error("Please fill in all required fields in this section.");
         return;
       }
 
-      executeApiCall(buttonComponent, payload);
+      if (buttonComponent.api && buttonComponent.api.url) {
+        executeApiCall(buttonComponent, payload);
+      } else if (buttonComponent.viewDetailsConfig) {
+        setDetailView({
+          config: buttonComponent.viewDetailsConfig,
+          formValues: { ...formValues, ...payload },
+        });
+      }
     }
   };
 
@@ -297,6 +304,24 @@ const LayoutPreview = ({
               `${populated} field${populated > 1 ? "s" : ""} populated from response.`,
             );
           }
+        }
+
+        if (buttonComponent.viewDetailsConfig) {
+          const resolvedObj = {};
+
+          if (buttonComponent.viewDetailsConfig.headerCards) {
+            buttonComponent.viewDetailsConfig.headerCards.forEach((card) => {
+              if (card.fieldName) {
+                const val = searchFieldInResponse(result, card.fieldName);
+                if (val !== undefined && val !== null) resolvedObj[card.fieldName] = val;
+              }
+            });
+          }
+
+          setDetailView({
+            config: buttonComponent.viewDetailsConfig,
+            formValues: { ...formValues, ...attributesPayload, ...resolvedObj },
+          });
         }
 
         if (apiConfig.resetFormOnSuccess) {
@@ -437,7 +462,7 @@ const LayoutPreview = ({
             c.type === "newline"
           ) {
             return (
-              <div key={c.id} style={{ width: "100%" }}>
+              <div key={c.id || c.name || `singleton-${c.type}-${index}`} style={{ width: "100%" }}>
                 <ComponentRenderer
                   component={c}
                   value={formValues[c.name]}

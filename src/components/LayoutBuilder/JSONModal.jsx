@@ -94,10 +94,12 @@ const JSONModal = ({ open, onClose, config }) => {
         onCancel={onClose}
         width="100%"
         style={{ top: 0, padding: 0, margin: 0, maxWidth: "100vw" }}
-        bodyStyle={{
-          height: "calc(100vh - 108px)",
-          overflowY: "auto",
-          padding: 16,
+        styles={{
+          body: {
+            height: "calc(100vh - 108px)",
+            overflowY: "auto",
+            padding: 16,
+          },
         }}
         footer={[
           <Button key="close" onClick={onClose}>
