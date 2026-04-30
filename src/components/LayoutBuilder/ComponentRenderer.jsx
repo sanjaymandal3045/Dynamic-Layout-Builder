@@ -13,6 +13,9 @@ import {
 } from "antd";
 import { DeleteOutlined, LockOutlined } from "@ant-design/icons";
 import { useApi } from "../../utilities/axiosApiCall";
+import CustomTable from "../UI/CustomTable";
+import FilterSearchPanel from "../UI/FilterSearchPanel";
+import CheckboxComponent from "../UI/CheckboxComponent";
 
 const { Text } = Typography;
 
@@ -41,10 +44,12 @@ const ComponentRenderer = ({
   value,
   onValueChange,
   onBtnClick,
+  onFilterSearch,
   onRowAction,
   onViewDetails,
   disabled,
   refreshTrigger,
+  externalData,
 }) => {
   const [apiData, setApiData] = useState([]);
   const [tableData, setTableData] = useState([]);
@@ -59,8 +64,8 @@ const ComponentRenderer = ({
     const lowerSearch = searchText.toLowerCase();
     return tableData.filter((item) =>
       Object.keys(item).some((key) =>
-        String(item[key]).toLowerCase().includes(lowerSearch)
-      )
+        String(item[key]).toLowerCase().includes(lowerSearch),
+      ),
     );
   }, [tableData, searchText]);
 
@@ -93,20 +98,45 @@ const ComponentRenderer = ({
       const fetchData = async () => {
         setLoading(true);
         try {
-          await new Promise((r) => setTimeout(r, 800));
-          setApiData([
-            { label: "Dynamic Item 1", value: "d1" },
-            { label: "Dynamic Item 2", value: "d2" },
-          ]);
+          const apiCfg = component.selectApiCommon || {};
+          const method = apiCfg.method || "post";
+          let res;
+
+          if (method === "get") {
+            res = await dataTableApi.get(component.dataUrl);
+          } else {
+            const payload = {
+              subChannelId: apiCfg.subChannelId,
+              subServiceId: apiCfg.subServiceId,
+              attributes: {},
+            };
+            res = await dataTableApi.post(component.dataUrl, payload);
+          }
+
+          // Standardised response shape:
+          // { data: { attributes: { dropdownValues: [{ label, value }] } } }
+          const dropdownValues = res?.data?.attributes?.dropdownValues;
+          if (Array.isArray(dropdownValues)) {
+            setApiData(dropdownValues);
+          } else {
+            console.warn("Unexpected dropdown API response shape:", res);
+            messageApi.warning("Dropdown API returned an unexpected format.");
+          }
         } catch (e) {
           console.error("Failed to fetch dropdown data", e);
+          messageApi.error("Failed to load dropdown options.");
         } finally {
           setLoading(false);
         }
       };
       fetchData();
     }
-  }, [component.dataSource, component.dataUrl, component.type]);
+  }, [
+    component.dataSource,
+    component.dataUrl,
+    component.type,
+    component.selectApiCommon,
+  ]);
 
   // ── Fetch table data ─────────────────────────────────────────────────────────
   // Fetch table data when dataUrl, type or refreshTrigger changes
@@ -122,7 +152,6 @@ const ComponentRenderer = ({
       const menuParams = {
         subChannelId: component.tableApiCommon.subChannelId,
         subServiceId: component.tableApiCommon.subServiceId,
-        traceNo: component.tableApiCommon.traceNo,
         attributes: {},
       };
       const res = await dataTableApi.post(component.dataUrl, menuParams);
@@ -190,7 +219,6 @@ const ComponentRenderer = ({
             const payload = {
               subChannelId: component.onBlurApi?.apiCommon?.subChannelId,
               subServiceId: component.onBlurApi?.apiCommon?.subServiceId,
-              traceNo: component.onBlurApi?.apiCommon?.traceNo,
               attributes: { [component.name]: value },
             };
             const response = await dataTableApi.post(
@@ -218,7 +246,7 @@ const ComponentRenderer = ({
                 );
             }
           } catch (e) {
-            console.error("onBlur API call failed:", e);
+            console.error("on-Tab-press API call failed:", e);
             messageApi.error("Failed to fetch data on blur");
           }
         };
@@ -274,6 +302,32 @@ const ComponentRenderer = ({
         if (!state.isVisible) return null;
         const isDisabled = disabled || state.isDisabled;
 
+        // ── Filter Search Panel mode ─────────────────────────────────────────
+        if (component.filterSearch?.enabled) {
+          const opts = component.filterSearch.searchOptions || [];
+          if (opts.length === 0) {
+            return (
+              <div style={{ gridColumn: gc, padding: "0 8px" }}>
+                <p style={{ color: "#f59e0b", fontSize: 12 }}>
+                  ⚠ Filter Search enabled but no options configured.
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div style={{ gridColumn: "1 / -1", padding: "0 8px" }}>
+              <FilterSearchPanel
+                searchOptions={opts}
+                multiFilter={component.filterSearch.multiFilter !== false}
+                buttonLabel={component.label || "Search"}
+                isLoading={isDisabled}
+                onSearch={(attrs) => onFilterSearch?.(attrs)}
+              />
+            </div>
+          );
+        }
+
+        // ── Regular button mode ──────────────────────────────────────────────
         const variantMap = {
           primary: { type: "primary" },
           default: { type: "default" },
@@ -409,17 +463,22 @@ const ComponentRenderer = ({
         const state = getComponentState(component);
         if (!state.isVisible) return null;
 
+        // Determine effective data source:
+        // External mode: dataSourceButtonName is set and no dataUrl
+        const isExternalMode = !component.dataUrl && component.dataSourceButtonName;
+        const effectiveData = isExternalMode ? (externalData || []) : filteredTableData;
+        const effectiveLoading = isExternalMode ? false : tableLoading;
+
         const tableColumns = [];
 
         if (
           component.rowActions?.showSelect ||
-          component.rowActions?.showDelete ||
           component.rowActions?.showViewDetails
         ) {
           tableColumns.push({
             title: "Actions",
             key: "actions",
-            width: component.rowActions?.showViewDetails ? 180 : 110,
+            width: "120px",
             align: "center",
             render: (_, record) => (
               <Space size="small">
@@ -450,18 +509,6 @@ const ComponentRenderer = ({
                     {component.rowActions?.viewDetailsLabel || "Details"}
                   </Button>
                 )}
-                {component.rowActions?.showDelete && (
-                  <Button
-                    danger
-                    size="small"
-                    icon={<DeleteOutlined />}
-                    onClick={() =>
-                      messageApi.info("Delete functionality to be implemented")
-                    }
-                    disabled={state.isDisabled}
-                    style={{ borderRadius: 6 }}
-                  />
-                )}
               </Space>
             ),
           });
@@ -474,18 +521,28 @@ const ComponentRenderer = ({
             key: col.dataIndex,
             width: 150,
             ellipsis: true,
+            align: "center",
           })),
         );
 
         return (
           <div style={{ gridColumn: "1 / -1", padding: "0 8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                marginBottom: 12,
+              }}
+            >
               <div>
                 {component.label && (
                   <div style={{ ...labelStyle, marginBottom: 0 }}>
                     <span style={labelText}>{component.label}</span>
                     {state.isDisabled && (
-                      <LockOutlined style={{ fontSize: 11, color: "#f59e0b" }} />
+                      <LockOutlined
+                        style={{ fontSize: 11, color: "#f59e0b" }}
+                      />
                     )}
                   </div>
                 )}
@@ -502,7 +559,7 @@ const ComponentRenderer = ({
                 )}
               </div>
             </div>
-            <Table
+            {/* <Table
               columns={tableColumns}
               dataSource={filteredTableData}
               loading={tableLoading}
@@ -529,8 +586,45 @@ const ComponentRenderer = ({
                 boxShadow: "0 1px 4px rgba(15,23,42,0.04)",
               }}
               className="rbs-table"
+            /> */}
+            <CustomTable
+              dataSource={effectiveData}
+              columns={tableColumns}
+              rowKey="id"
+              loading={effectiveLoading}
+              showExport={true}
+              onExport={(data) => {
+                console.log("Exporting data:", data);
+              }}
+              onRowClick={(record) => {
+                console.log("Row clicked:", record);
+              }}
+              stripedRows={true}
+              showRowHoverEffect={true}
+              highlightFirstColumn={true}
+              // Animation props
+              rowAnimation="zoom"
+              animationDuration={0.3}
+              staggerChildren={0.05}
             />
           </div>
+        );
+      }
+
+      // ── Checkbox (single or group) ──────────────────────────────────────
+      case "checkbox": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
+        return (
+          <FieldWrap gridColumn={gc}>
+            <CheckboxComponent
+              component={component}
+              value={value}
+              onValueChange={onValueChange}
+              disabled={disabled}
+              state={state}
+            />
+          </FieldWrap>
         );
       }
 

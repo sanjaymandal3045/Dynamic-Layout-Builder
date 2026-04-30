@@ -1,304 +1,231 @@
-// ReusableTable.jsx
-import React, { useRef, memo } from "react";
-import {
-  Table,
-  Tag,
-  Space,
-  Button,
-  Tooltip,
-  Empty,
-  Typography,
-  message,
-} from "antd";
-import { FileTextOutlined, DownloadOutlined } from "@ant-design/icons";
-import { motion } from "framer-motion";
+import React, { memo, useMemo, useRef } from "react";
+import { Table, Empty, Typography, message } from "antd";
 
 const { Text } = Typography;
 
-const CustomTable = memo(({
-  // Data props
-  dataSource = [],
-  columns = [],
-  rowKey = "id",
-  loading = false,
+const CustomTable = memo(
+  ({
+    dataSource = [],
+    columns = [],
+    rowKey = "id",
+    loading = false,
 
-  // Pagination props
-  pagination = true,
-  pageSize = 10,
-  showSizeChanger = true,
-  showQuickJumper = true,
+    pagination = true,
+    pageSize = 10,
+    showSizeChanger = true,
+    showQuickJumper = true,
 
-  // Styling props
-  title = null,
-  showTitle = true,
-  showExport = true,
-  bordered = false,
-  size = "middle",
-  scrollX = 1000,
-  rowClassName = null,
+    bordered = false,
+    size = "middle",
+    scrollX = 1000,
+    rowClassName = null,
 
-  // Interaction props
-  onRowClick = null,
-  onExport = null,
-  emptyText = "No data available",
-  customEmptyComponent = null,
+    onRowClick = null,
+    onExport = null,
+    emptyText = "No data available",
+    customEmptyComponent = null,
 
-  // Animation props
-  rowAnimation = "slide",
-  animationDuration = 0.3,
-  staggerChildren = 0.05,
+    showRowHoverEffect = true,
+    stripedRows = true,
+    highlightFirstColumn = true,
+    customHeaderStyle = {},
+    customRowStyle = {},
 
-  // Additional features
-  showRowHoverEffect = true,
-  stripedRows = true,
-  highlightFirstColumn = true,
-  customHeaderStyle = {},
-  customRowStyle = {},
+    primaryColor = "#0f858dff",
+    secondaryColor = "#f0f7ff",
 
-  // Theme colors
-  primaryColor = "#1890ff",
-  secondaryColor = "#f0f7ff",
+    hasActiveFilters = false,
 
-  // Filter state
-  hasActiveFilters = false,
-}) => {
-  const tableRef = useRef(null);
+    // Kept for API compatibility — controls stagger delay
+    staggerChildren = 0.05,
+    animationDuration = 0.28,
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: staggerChildren,
-      },
-    },
-  };
+    // Unused but accepted so callers don't break
+    rowAnimation,
+    showExport,
+    title,
+    showTitle,
+  }) => {
+    // ── Version key ──────────────────────────────────────────────────────────
+    // Increments only when the dataSource reference changes.
+    // This generates a new CSS class name so the animation re-fires only on
+    // real data loads — not on sort / paginate (which don't change our props).
+    const animVersionRef = useRef(0);
+    const prevDataRef = useRef(dataSource);
+    if (prevDataRef.current !== dataSource) {
+      prevDataRef.current = dataSource;
+      animVersionRef.current += 1;
+    }
+    const v = animVersionRef.current;
+    const animClass = `ctr-${v}`; // unique class per data version
 
-  const rowVariants = {
-    hidden: () => {
-      switch (rowAnimation) {
-        case "slide":
-          return { opacity: 0, x: -20 };
-        case "fade":
-          return { opacity: 0 };
-        case "scale":
-          return { opacity: 0, scale: 0.95 };
-        case "zoom":
-          return { opacity: 0, scale: 0.8 };
-        default:
-          return { opacity: 0 };
+    // ── Scoped CSS ───────────────────────────────────────────────────────────
+    // The entrance animation is keyed to `animClass` so it only replays when
+    // new data arrives. Hover and stripes are version-independent CSS.
+    const staggerMs = Math.round(staggerChildren * 1000);
+    const durationMs = Math.round(animationDuration * 1000);
+
+    const css = `
+      @keyframes ctRowIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
-    },
-    visible: {
-      opacity: 1,
-      x: 0,
-      scale: 1,
-      transition: {
-        duration: animationDuration,
-        ease: "easeOut",
-      },
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.95,
-      transition: {
-        duration: animationDuration / 2,
-      },
-    },
-  };
 
-  // Default empty component
-  const defaultEmptyComponent = customEmptyComponent || (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Empty
-        description="No Results"
-        style={{ marginTop: "48px", marginBottom: "48px" }}
-      >
+      /* Entrance — only fires when .ctr-{v} is new to the browser */
+      tr.${animClass} td {
+        animation: ctRowIn ${durationMs}ms ease-out both;
+      }
+
+      /* Striped rows */
+      tr.ct-even td { background: #fafafa !important; }
+      tr.ct-odd  td { background: #ffffff !important; }
+
+      /* Hover highlight */
+      ${
+        showRowHoverEffect
+          ? `
+      tr.ct-even:hover td,
+      tr.ct-odd:hover  td {
+        background: rgba(24, 144, 255, 0.07) !important;
+      }
+      tr.ct-even td,
+      tr.ct-odd  td {
+        transition: background 0.18s ease;
+      }`
+          : ""
+      }
+
+      /* Smooth cursor */
+      .ant-table-row { cursor: ${onRowClick ? "pointer" : "default"}; }
+    `;
+
+    // ── Row class names ──────────────────────────────────────────────────────
+    const getRowClassName = (record, index) => {
+      const stripe = stripedRows ? (index % 2 === 0 ? "ct-even" : "ct-odd") : "";
+      const custom = rowClassName ? rowClassName(record, index) ?? "" : "";
+      // animClass drives the entrance animation; stripe handles colouring
+      return `${animClass} ${stripe} ${custom}`.trim();
+    };
+
+    // ── onRow — staggered animation-delay via inline style ──────────────────
+    const handleRow = (record, rowIndex) => ({
+      ...(onRowClick ? { onClick: () => onRowClick(record) } : {}),
+      style: {
+        // Push each row's animation start later so they cascade in
+        animationDelay: `${rowIndex * staggerMs}ms`,
+      },
+    });
+
+    // ── Enhanced columns ─────────────────────────────────────────────────────
+    const enhancedColumns = useMemo(
+      () =>
+        columns.map((col, idx) => ({
+          ...col,
+          onHeaderCell: () => ({
+            style: {
+              backgroundColor: secondaryColor,
+              fontWeight: 600,
+              fontSize: 14,
+              borderBottom: `2px solid ${primaryColor}`,
+              ...customHeaderStyle,
+            },
+          }),
+          onCell: (_record, rowIdx) => ({
+            style: {
+              ...(highlightFirstColumn &&
+                idx === 0 && {
+                  backgroundColor: rowIdx % 2 === 0 ? "#fafafa" : "#fff",
+                  fontWeight: 500,
+                }),
+              ...customRowStyle,
+            },
+          }),
+        })),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [columns, primaryColor, secondaryColor, highlightFirstColumn],
+    );
+
+    // ── Pagination ───────────────────────────────────────────────────────────
+    const paginationConfig = pagination
+      ? {
+          pageSize,
+          showSizeChanger,
+          showQuickJumper,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} of ${total} items`,
+          position: ["bottomCenter"],
+        }
+      : false;
+
+    // ── Empty state ──────────────────────────────────────────────────────────
+    const emptyNode = customEmptyComponent ?? (
+      <Empty description="No Results" style={{ margin: "48px 0" }}>
         <Text type="secondary">
           {hasActiveFilters
             ? "No records found matching your filters"
             : emptyText}
         </Text>
       </Empty>
-    </motion.div>
-  );
+    );
 
-  // Default pagination config
-  const paginationConfig = pagination
-    ? {
-        pageSize,
-        total: dataSource.length,
-        showSizeChanger,
-        showQuickJumper,
-        showTotal: (total, range) =>
-          `${range[0]}-${range[1]} of ${total} items`,
-        position: ["bottomCenter"],
-      }
-    : false;
-
-  // Default row class name generator with zigzag coloring
-  const getRowClassName = (record, index) => {
-    let className = "";
-
-    // Zigzag coloring (alternating row colors)
-    if (stripedRows) {
-      if (index % 2 === 0) {
-        className = "reusable-table-row-even";
-      } else {
-        className = "reusable-table-row-odd";
-      }
-    }
-
-    if (rowClassName) {
-      const customClass = rowClassName(record, index);
-      className += customClass ? ` ${customClass}` : "";
-    }
-
-    return className;
-  };
-
-  // Default row click handler
-  const handleRowClick = (record) => {
-    if (onRowClick) {
-      onRowClick(record);
-    }
-  };
-
-  // Export handler
-  const handleExport = async () => {
-    if (onExport) {
-      await onExport(dataSource);
-    } else {
+    // ── Export ───────────────────────────────────────────────────────────────
+    const handleExport = async () => {
+      if (onExport) return onExport(dataSource);
       try {
-        const headers = columns
-          .filter((col) => col.dataIndex && col.title !== "Action")
-          .map((col) => col.title);
-
-        const rows = dataSource.map((row) =>
-          columns
-            .filter((col) => col.dataIndex && col.title !== "Action")
-            .map((col) => row[col.dataIndex]),
+        const dataCols = columns.filter(
+          (c) => c.dataIndex && c.title !== "Action",
         );
-
-        const csvContent = [
-          headers.join(","),
-          ...rows.map((row) => row.join(",")),
+        const csv = [
+          dataCols.map((c) => c.title).join(","),
+          ...dataSource.map((row) =>
+            dataCols.map((c) => row[c.dataIndex] ?? "").join(","),
+          ),
         ].join("\n");
-
-        const blob = new Blob([csvContent], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `table-export-${Date.now()}.csv`;
-        a.click();
+        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        Object.assign(document.createElement("a"), {
+          href: url,
+          download: `export-${Date.now()}.csv`,
+        }).click();
         URL.revokeObjectURL(url);
         message.success("Export successful");
-      } catch (error) {
+      } catch {
         message.error("Export failed");
       }
-    }
-  };
+    };
 
-
-  // Enhanced columns with default styling
-  const enhancedColumns = columns.map((col, index) => ({
-    ...col,
-    onHeaderCell: (column) => ({
-      style: {
-        backgroundColor: secondaryColor,
-        fontWeight: 600,
-        fontSize: "14px",
-        borderBottom: `2px solid ${primaryColor}`,
-        ...customHeaderStyle,
-      },
-    }),
-    onCell: (record, rowIndex) => ({
-      style: {
-        ...(highlightFirstColumn &&
-          index === 0 && {
-            backgroundColor: rowIndex % 2 === 0 ? "#fafafa" : "#ffffff",
-            fontWeight: 500,
-          }),
-        ...customRowStyle,
-      },
-    }),
-  }));
-
-  // Custom body wrapper with animations
-  const components = {
-    body: {
-      wrapper: (props) => (
-        <motion.tbody
-          {...props}
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+    // ── Render ───────────────────────────────────────────────────────────────
+    return (
+      <>
+        <style>{css}</style>
+        <Table
+          columns={enhancedColumns}
+          dataSource={dataSource}
+          loading={loading}
+          pagination={paginationConfig}
+          scroll={{ x: scrollX }}
+          locale={{ emptyText: emptyNode }}
+          rowClassName={getRowClassName}
+          rowKey={(record) => record[rowKey] ?? record.id ?? Math.random()}
+          onRow={handleRow}
+          bordered={bordered}
+          size={size}
+          expandable={{ showExpandColumn: false }}
+          style={{
+            borderRadius: 10,
+            border: "1px solid #e8edf2",
+            overflow: "hidden",
+            boxShadow: "0 1px 4px rgba(15,23,42,0.04)",
+          }}
         />
-      ),
-      row: (props) => {
-        const { className, ...restProps } = props;
-        return (
-          <motion.tr
-            {...restProps}
-            className={className}
-            variants={rowVariants}
-            style={{ cursor: onRowClick ? "pointer" : "default" }}
-            whileHover={
-              showRowHoverEffect
-                ? {
-                    backgroundColor: "rgba(24, 144, 255, 0.05)",
-                    transition: { duration: 0.15 },
-                  }
-                : {}
-            }
-          />
-        );
-      },
-    },
-  };
+      </>
+    );
+  },
+  (prev, next) =>
+    prev.dataSource === next.dataSource &&
+    prev.loading === next.loading &&
+    prev.hasActiveFilters === next.hasActiveFilters &&
+    prev.columns === next.columns,
+);
 
-  return (
-    <motion.div
-      className="reusable-table-container"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      ref={tableRef}
-    >
-      <Table
-        columns={enhancedColumns}
-        dataSource={dataSource}
-        rowKey={rowKey}
-        loading={loading}
-        pagination={paginationConfig}
-        scroll={{ x: scrollX }}
-        locale={{ emptyText: defaultEmptyComponent }}
-        rowClassName={getRowClassName}
-        onRow={(record) => ({
-          onClick: () => handleRowClick(record),
-        })}
-        bordered={bordered}
-        size={size}
-        components={components}
-      />
-    </motion.div>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison function - return true if props are equal (skip re-render)
-  // We only care about these key props for the table
-  return (
-    prevProps.dataSource === nextProps.dataSource &&
-    prevProps.loading === nextProps.loading &&
-    prevProps.hasActiveFilters === nextProps.hasActiveFilters &&
-    prevProps.columns === nextProps.columns
-  );
-});
-
-CustomTable.displayName = 'CustomTable';
-
+CustomTable.displayName = "CustomTable";
 export default CustomTable;

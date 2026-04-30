@@ -21,6 +21,9 @@ const LayoutPreview = ({
   const apiHandler = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tableRefreshTriggers, setTableRefreshTriggers] = useState({});
+  // External table data — populated by button/filter API responses
+  // Map of { [tableName]: arrayData }
+  const [externalTableData, setExternalTableData] = useState({});
   // Master-detail view state — null = search/list view, object = detail view
   const [detailView, setDetailView] = useState(null); // { config, formValues }
 
@@ -43,6 +46,12 @@ const LayoutPreview = ({
       }
     }
     return undefined;
+  };
+
+  // ── Resolve a dot-notation path on an object (e.g. "data.attributes.data") ──
+  const resolvePath = (obj, path) => {
+    if (!obj || !path) return undefined;
+    return path.split(".").reduce((acc, key) => acc?.[key], obj);
   };
 
   // ── Row select handler (column-mapping based, same-tab) ───────────────────────
@@ -82,8 +91,8 @@ const LayoutPreview = ({
       return;
     }
 
-    const { url, subChannelId, subServiceId, traceNo } = ra.viewDetailsApi;
-    if (!subChannelId || !subServiceId || !traceNo) {
+    const { url, subChannelId, subServiceId } = ra.viewDetailsApi;
+    if (!subChannelId || !subServiceId) {
       messageApi.error("View Details API configuration is incomplete.");
       return;
     }
@@ -93,7 +102,6 @@ const LayoutPreview = ({
       const result = await apiHandler.post(url, {
         subChannelId,
         subServiceId,
-        traceNo,
         attributes: { ...rowData },
       });
       console.log("ViewDetails Response:", result);
@@ -123,6 +131,22 @@ const LayoutPreview = ({
                 resolvedValues[card.fieldName] = val;
               }
             }
+          });
+        }
+
+        // Auto-resolve all form fields in the details view config
+        if (ra.viewDetailsConfig?.tabs) {
+          ra.viewDetailsConfig.tabs.forEach((tab) => {
+            tab.sections?.forEach((section) => {
+              section.components?.forEach((comp) => {
+                if (comp.name) {
+                  const val = searchFieldInResponse(result, comp.name);
+                  if (val !== undefined && val !== null) {
+                    resolvedValues[comp.name] = val;
+                  }
+                }
+              });
+            });
           });
         }
 
@@ -158,22 +182,53 @@ const LayoutPreview = ({
   // ── Button click handler ─────────────────────────────────────────────────────
   const handleAction = (section, buttonComponent) => {
     const sectionFieldNames = section.components
-      .filter((comp) => comp.type === "field" || comp.type === "select")
+      .filter(
+        (comp) =>
+          comp.type === "field" ||
+          comp.type === "select" ||
+          comp.type === "checkbox",
+      )
       .map((comp) => comp.name);
 
     if (buttonComponent.onClick === "reset") {
-      sectionFieldNames.forEach((name) => onValueChange(name, undefined));
+      sectionFieldNames.forEach((name) => {
+        const comp = section.components.find((c) => c.name === name);
+        if (comp?.type === "checkbox") {
+          // Reset to the configured unchecked default, not undefined
+          const resetVal =
+            comp.checkboxMode === "multiple"
+              ? []
+              : (comp.uncheckedValue ?? "N");
+          onValueChange(name, resetVal);
+        } else {
+          onValueChange(name, undefined);
+        }
+      });
       messageApi.success(`Cleared fields in ${section.name || "section"}`);
       return;
     }
 
-    if (buttonComponent.onClick === "submit" || buttonComponent.viewDetailsConfig) {
+    if (
+      buttonComponent.onClick === "submit" ||
+      buttonComponent.viewDetailsConfig
+    ) {
       const payload = {};
       let hasMissingRequired = false;
 
       sectionFieldNames.forEach((name) => {
         const component = section.components.find((c) => c.name === name);
-        const val = formValues[name];
+        let val = formValues[name];
+
+        // Checkboxes that have never been interacted with will have
+        // val === undefined. JSON.stringify silently drops undefined keys,
+        // so we must substitute the configured default before building the payload.
+        if (component?.type === "checkbox" && (val === undefined || val === null)) {
+          val =
+            component.checkboxMode === "multiple"
+              ? []
+              : (component.uncheckedValue ?? "N");
+        }
+
         if (
           component?.required &&
           (val === undefined || val === null || val === "")
@@ -210,11 +265,7 @@ const LayoutPreview = ({
       return;
     }
 
-    if (
-      !apiCommon?.subChannelId ||
-      !apiCommon?.subServiceId ||
-      !apiCommon?.traceNo
-    ) {
+    if (!apiCommon?.subChannelId || !apiCommon?.subServiceId) {
       messageApi.error(
         "API configuration is incomplete. Please configure all required fields.",
       );
@@ -230,7 +281,6 @@ const LayoutPreview = ({
       const finalPayload = {
         subChannelId: apiCommon.subChannelId,
         subServiceId: apiCommon.subServiceId,
-        traceNo: apiCommon.traceNo,
         attributes: attributesPayload,
       };
 
@@ -262,21 +312,27 @@ const LayoutPreview = ({
           apiConfig.successMessage || "Action completed successfully!",
         );
 
-        // Trigger table refresh using triggerButtonName
         if (buttonComponent.name) {
           const tablesToRefresh = [];
+          const tablesToPopulate = [];
           config?.tabs?.forEach((tab) => {
             tab.sections?.forEach((section) => {
               section.components
-                ?.filter(
-                  (c) =>
-                    c.type === "table" &&
-                    c.triggerButtonName === buttonComponent.name,
-                )
-                .forEach((table) => tablesToRefresh.push(table));
+                ?.filter((c) => c.type === "table")
+                .forEach((table) => {
+                  // Mode 1: triggerButtonName — re-fetch the table's own API
+                  if (table.triggerButtonName === buttonComponent.name) {
+                    tablesToRefresh.push(table);
+                  }
+                  // Mode 2: dataSourceButtonName — push response data into table
+                  if (table.dataSourceButtonName === buttonComponent.name) {
+                    tablesToPopulate.push(table);
+                  }
+                });
             });
           });
 
+          // Refresh self-fetching tables
           if (tablesToRefresh.length > 0) {
             tablesToRefresh.forEach((table) => {
               setTableRefreshTriggers((prev) => ({
@@ -285,6 +341,18 @@ const LayoutPreview = ({
               }));
             });
             messageApi.info(`Refreshing ${tablesToRefresh.length} table(s)...`);
+          }
+
+          // Populate externally-bound tables with response data
+          if (tablesToPopulate.length > 0) {
+            tablesToPopulate.forEach((table) => {
+              const path = table.dataResponsePath || "data.attributes.data";
+              const extracted = resolvePath(result, path);
+              setExternalTableData((prev) => ({
+                ...prev,
+                [table.name]: Array.isArray(extracted) ? extracted : [],
+              }));
+            });
           }
         }
 
@@ -313,8 +381,25 @@ const LayoutPreview = ({
             buttonComponent.viewDetailsConfig.headerCards.forEach((card) => {
               if (card.fieldName) {
                 const val = searchFieldInResponse(result, card.fieldName);
-                if (val !== undefined && val !== null) resolvedObj[card.fieldName] = val;
+                if (val !== undefined && val !== null)
+                  resolvedObj[card.fieldName] = val;
               }
+            });
+          }
+
+          // Auto-resolve all form fields in the details view config
+          if (buttonComponent.viewDetailsConfig.tabs) {
+            buttonComponent.viewDetailsConfig.tabs.forEach((tab) => {
+              tab.sections?.forEach((section) => {
+                section.components?.forEach((comp) => {
+                  if (comp.name) {
+                    const val = searchFieldInResponse(result, comp.name);
+                    if (val !== undefined && val !== null) {
+                      resolvedObj[comp.name] = val;
+                    }
+                  }
+                });
+              });
             });
           }
 
@@ -346,6 +431,20 @@ const LayoutPreview = ({
     }
   };
 
+  // ── Filter search handler (called by FilterSearchPanel) ──────────────────
+  // Reuses executeApiCall with the criteria attributes from the filter panel.
+  const handleFilterSearch = (section, buttonComponent, filterAttributes) => {
+    if (!buttonComponent.api?.url) {
+      console.warn(
+        "[FilterSearch] Button has no API URL configured.",
+        buttonComponent.name,
+      );
+      return;
+    }
+    // Forward to the existing API executor with the filter attributes as payload
+    executeApiCall(buttonComponent, filterAttributes);
+  };
+
   if (!config || !config.tabs || !Array.isArray(config.tabs)) {
     return <>{contextHolder}</>;
   }
@@ -366,7 +465,7 @@ const LayoutPreview = ({
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              marginBottom: 18,
+              // marginBottom: 18,
               padding: "7px 16px",
               borderRadius: 8,
               border: "1.5px solid #e2e8f0",
@@ -411,7 +510,8 @@ const LayoutPreview = ({
           display: "flex",
           flexDirection: "column",
           gap: `${section.layout.gutter ?? 12}px`,
-          padding: "4px 10px",
+          padding: "12px 10px 12px 10px",
+          backgroundColor: "#f7fbff",
         }}
       >
         {section.components.map((c, index) => {
@@ -443,8 +543,12 @@ const LayoutPreview = ({
                         value={formValues[btnComp.name]}
                         onValueChange={onValueChange}
                         onBtnClick={() => handleAction(section, btnComp)}
+                        onFilterSearch={(attrs) =>
+                          handleFilterSearch(section, btnComp, attrs)
+                        }
                         onRowAction={handleTableRowAction}
                         onViewDetails={handleViewDetails}
+                        externalData={externalTableData[btnComp.name]}
                         disabled={isSubmitting}
                       />
                     ))}
@@ -462,14 +566,21 @@ const LayoutPreview = ({
             c.type === "newline"
           ) {
             return (
-              <div key={c.id || c.name || `singleton-${c.type}-${index}`} style={{ width: "100%" }}>
+              <div
+                key={c.id || c.name || `singleton-${c.type}-${index}`}
+                style={{ width: "100%" }}
+              >
                 <ComponentRenderer
                   component={c}
                   value={formValues[c.name]}
                   onValueChange={onValueChange}
                   onBtnClick={() => handleAction(section, c)}
+                  onFilterSearch={(attrs) =>
+                    handleFilterSearch(section, c, attrs)
+                  }
                   onRowAction={handleTableRowAction}
                   onViewDetails={handleViewDetails}
+                  externalData={externalTableData[c.name]}
                   refreshTrigger={tableRefreshTriggers[c.name]}
                   disabled={isSubmitting}
                 />
@@ -525,8 +636,12 @@ const LayoutPreview = ({
                         value={formValues[gridComp.name]}
                         onValueChange={onValueChange}
                         onBtnClick={() => handleAction(section, gridComp)}
+                        onFilterSearch={(attrs) =>
+                          handleFilterSearch(section, gridComp, attrs)
+                        }
                         onRowAction={handleTableRowAction}
                         onViewDetails={handleViewDetails}
+                        externalData={externalTableData[gridComp.name]}
                         disabled={isSubmitting}
                       />
                     ))}
@@ -568,10 +683,10 @@ const LayoutPreview = ({
       {/* Scoped CSS for smooth Ant Design tab bar */}
       <style>{`
         .lp-page-header { padding: 20px 24px 0; }
-        .lp-tabs .ant-tabs-nav { padding: 0 24px; background: transparent; }
+        .lp-tabs .ant-tabs-nav { padding: 0 24px; background: #cae6ff30; }
         .lp-tabs .ant-tabs-tab { font-weight: 500; font-size: 13.5px; padding: 12px 4px; }
-        .lp-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { color: #6366f1 !important; }
-        .lp-tabs .ant-tabs-ink-bar { background: #6366f1; border-radius: 2px; }
+        .lp-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { color: #0d9488 !important; }
+        .lp-tabs .ant-tabs-ink-bar { background: #0d9488; border-radius: 2px; }
         .lp-tabs .ant-tabs-content-holder { padding: 16px 20px 20px; }
       `}</style>
 
@@ -703,7 +818,7 @@ const sectionCard = {
   border: "1px solid #eef0f6",
   boxShadow: "0 1px 6px rgba(15, 23, 42, 0.05)",
   overflow: "hidden",
-  padding: "0 0 18px",
+  // padding: "0 0 18px",
 };
 
 const sectionHeaderBar = {
@@ -712,8 +827,9 @@ const sectionHeaderBar = {
   gap: "10px",
   padding: "14px 18px",
   borderBottom: "1px solid #f1f5f9",
-  background: "linear-gradient(90deg, #f8faff 0%, #fff 100%)",
-  marginBottom: "12px",
+  background:
+    "linear-gradient(90deg, rgb(241, 241, 241) 0%, rgb(216 227 249) 75%)",
+  // marginBottom: "12px",
 };
 
 const sectionAccent = {

@@ -63,13 +63,16 @@ const AppShell = ({
 
   return (
     <>
-      <Layout ref={contentRef} style={{ minHeight: "100vh", background: "#f8f9fa" }}>
+      <Layout
+        ref={contentRef}
+        style={{ minHeight: "100vh", background: "#f8f9fa" }}
+      >
         {/* ── Sidebar ─────────────────────────────────────────── */}
         <Sider
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
-          theme="light"
+          theme="dark"
           width={SIDER_WIDTH}
           collapsedWidth={SIDER_COLLAPSED_WIDTH}
           style={{
@@ -110,7 +113,10 @@ const AppShell = ({
                   height={32}
                   preview={false}
                 />
-                <Title level={5} style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
+                <Title
+                  level={5}
+                  style={{ margin: 0, fontSize: 15, fontWeight: 600 }}
+                >
                   RBS Portal
                 </Title>
               </Space>
@@ -277,7 +283,8 @@ const AppShell = ({
             }}
           >
             <Text type="secondary" style={{ fontSize: 12 }}>
-              DBBL RBS Portal © {new Date().getFullYear()} • IT Development Division
+              DBBL RBS Portal © {new Date().getFullYear()} • IT Development
+              Division
             </Text>
           </div>
         </Layout>

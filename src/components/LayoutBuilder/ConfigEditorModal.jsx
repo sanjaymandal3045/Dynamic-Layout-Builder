@@ -43,7 +43,6 @@ const ConfigEditorModal = ({ open, onClose }) => {
       const menuParams = {
         subChannelId: "2",
         subServiceId: "9",
-        traceNo: "",
         attributes: {
           pageKey: pageKeyInput,
         },
@@ -96,17 +95,13 @@ const ConfigEditorModal = ({ open, onClose }) => {
       const saveParams = {
         subChannelId: "2",
         subServiceId: "8",
-        traceNo: "",
         attributes: {
           pageKey: config.pageKey,
           pageConfig: config, // Send the entire config
         },
       };
 
-      const res = await apiHandler.post(
-        "/transaction/execute",
-        saveParams
-      );
+      const res = await apiHandler.post("/transaction/execute", saveParams);
 
       if (res?.success === true || res?.data?.txnStatus === 0) {
         messageApi.success("Configuration saved successfully!");
@@ -228,7 +223,6 @@ const ConfigEditorModal = ({ open, onClose }) => {
 
             {/* Layout Builder */}
             <LayoutBuilder />
-            
           </>
         )}
       </Modal>

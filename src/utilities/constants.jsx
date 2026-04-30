@@ -147,6 +147,7 @@ export const COMPONENT_TYPES = {
   NEWLINE: "newline",
   SELECT: "select",
   TABLE: "table",
+  CHECKBOX: "checkbox",
 };
 
 export const FIELD_TYPES = [

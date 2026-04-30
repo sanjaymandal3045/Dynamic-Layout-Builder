@@ -88,9 +88,7 @@ const HomePage = ({ userName, onNavigate }) => {
           <Title level={2} style={bannerTitle}>
             Welcome to RBS Portal
           </Title>
-          <Text style={bannerSub}>
-            Dutch-Bangla Bank Limited ·
-          </Text>
+          <Text style={bannerSub}>· Dutch-Bangla Bank Limited ·</Text>
         </div>
         <div style={bannerRight}>
           <div style={orbOuter} />
@@ -168,7 +166,10 @@ const HomePage = ({ userName, onNavigate }) => {
                 <span style={{ ...actionTitle, color: action.color }}>
                   {action.title}
                 </span>
-                <Tag color={action.tagColor} style={{ margin: 0, fontSize: 11 }}>
+                <Tag
+                  color={action.tagColor}
+                  style={{ margin: 0, fontSize: 11 }}
+                >
                   {action.tag}
                 </Tag>
               </div>

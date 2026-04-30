@@ -1,18 +1,16 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   Card,
   Input,
   Button,
-  Table,
   Space,
   Row,
   Col,
   Select,
   Typography,
   message,
-  Divider,
   Tag,
-  Empty,
+  Spin,
 } from "antd";
 import {
   SearchOutlined,
@@ -24,93 +22,27 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import ContractDetails from "./ContractDetails";
 import CustomTable from "../components/UI/CustomTable";
+import { useApi } from "../utilities/axiosApiCall";
 
 const { Title, Text } = Typography;
-
-// Dummy data for demonstration
-const DUMMY_CONTRACTS = [
-  {
-    id: 1,
-    contractNo: "CNT001234",
-    branchNo: "101",
-    productCode: "PRD-001",
-    borrowerName: "Rabindranath Tagore",
-    loanIdNo: "LOAN-001",
-  },
-  {
-    id: 2,
-    contractNo: "CNT001235",
-    branchNo: "102",
-    productCode: "PRD-002",
-    borrowerName: "Kazi Nazrul Islam",
-    loanIdNo: "LOAN-002",
-  },
-  {
-    id: 3,
-    contractNo: "CNT001236",
-    branchNo: "103",
-    productCode: "PRD-003",
-    borrowerName: "Jibanananda Das",
-    loanIdNo: "LOAN-003",
-  },
-  {
-    id: 4,
-    contractNo: "CNT001237",
-    branchNo: "101",
-    productCode: "PRD-001",
-    borrowerName: "Sathendranath Dutta",
-    loanIdNo: "LOAN-004",
-  },
-  {
-    id: 5,
-    contractNo: "CNT001238",
-    branchNo: "102",
-    productCode: "PRD-004",
-    borrowerName: "Begum Rokeya",
-    loanIdNo: "LOAN-005",
-  },
-  {
-    id: 6,
-    contractNo: "CNT001239",
-    branchNo: "102",
-    productCode: "PRD-002",
-    borrowerName: "Kazi Abdul Wadud",
-    loanIdNo: "LOAN-006",
-  },
-  {
-    id: 7,
-    contractNo: "CNT001240",
-    branchNo: "101",
-    productCode: "PRD-005",
-    borrowerName: "Jasimuddin",
-    loanIdNo: "LOAN-007",
-  },
-  {
-    id: 8,
-    contractNo: "CNT001241",
-    branchNo: "103",
-    productCode: "PRD-003",
-    borrowerName: "Sufia Kamal",
-    loanIdNo: "LOAN-008",
-  },
-];
 
 const ContractSearch = () => {
   // Multi-filter state
   const [filters, setFilters] = useState([
-    { id: 1, searchType: "contractNo", searchValue: "" },
+    { id: 1, searchType: "P_CUSTOMER_ID", searchValue: "" },
     { id: 2, searchType: "branchNo", searchValue: "" },
   ]);
   const [nextFilterId, setNextFilterId] = useState(3);
 
   const [tableData, setTableData] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
+  const searchApi = useApi();
+  const detailsApi = useApi();
 
   const searchOptions = useMemo(
     () => [
-      { label: "Contact No", value: "contractNo" },
+      { label: "Customer ID", value: "P_CUSTOMER_ID" },
       { label: "Branch Code", value: "branchNo" },
       { label: "Product Code", value: "productCode" },
       { label: "Borrower Name", value: "borrowerName" },
@@ -121,12 +53,35 @@ const ContractSearch = () => {
 
   // Add a new filter row
   const handleAddFilter = useCallback(() => {
-    setFilters((prevFilters) => [
-      ...prevFilters,
-      { id: nextFilterId, searchType: "contractNo", searchValue: "" },
-    ]);
+    setFilters((prevFilters) => {
+      const selectedTypes = prevFilters
+        .map((f) => f.searchType)
+        .filter(Boolean);
+      const nextOption = searchOptions.find(
+        (opt) => !selectedTypes.includes(opt.value),
+      );
+      const nextSearchType = nextOption ? nextOption.value : null;
+
+      return [
+        ...prevFilters,
+        { id: nextFilterId, searchType: nextSearchType, searchValue: "" },
+      ];
+    });
     setNextFilterId((prev) => prev + 1);
-  }, [nextFilterId]);
+  }, [nextFilterId, searchOptions]);
+
+  // Get available options for a specific filter dropdown
+  const getAvailableOptions = useCallback(
+    (currentFilterId) => {
+      const otherSelectedTypes = filters
+        .filter((f) => f.id !== currentFilterId && f.searchType)
+        .map((f) => f.searchType);
+      return searchOptions.filter(
+        (opt) => !otherSelectedTypes.includes(opt.value),
+      );
+    },
+    [filters, searchOptions],
+  );
 
   // Remove a filter row
   const handleRemoveFilter = useCallback(
@@ -152,7 +107,7 @@ const ContractSearch = () => {
   }, []);
 
   // Multi-criteria search
-  const handleSearch = useCallback(() => {
+  const handleSearch = useCallback(async () => {
     // Check if any filter has a value
     const hasActiveFilter = filters.some((f) => f.searchValue.trim());
     if (!hasActiveFilter) {
@@ -160,36 +115,58 @@ const ContractSearch = () => {
       return;
     }
 
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      let results = DUMMY_CONTRACTS;
+    // Build attributes as { searchType: searchValue } pairs from active filters
+    const attributes = filters
+      .filter((f) => f.searchValue.trim())
+      .reduce((acc, f) => {
+        acc[f.searchType] = f.searchValue.trim();
+        return acc;
+      }, {});
 
-      // Apply all filters (AND logic)
-      for (const filter of filters) {
-        if (filter.searchValue.trim()) {
-          results = results.filter((contract) => {
-            const fieldValue = String(
-              contract[filter.searchType],
-            ).toLowerCase();
-            return fieldValue.includes(filter.searchValue.toLowerCase());
-          });
-        }
-      }
+    try {
+      const menuParams = {
+        subChannelId: "2",
+        subServiceId: "16",
+        attributes,
+      };
 
-      if (results.length === 0) {
-        messageApi.info("No contracts found matching all criteria");
+      const res = await searchApi.post("/transaction/execute", menuParams);
+
+      if (res?.data?.attributes) {
+        const results = res.data.attributes.data;
+        console.log("Table Data", results);
+        setTableData(Array.isArray(results) ? results : []);
+        messageApi.success("Search completed successfully!");
       } else {
-        messageApi.success(`Found ${results.length} contract(s)`);
+        messageApi.error("Invalid response received from API");
       }
-      setTableData(results);
-      setLoading(false);
-    }, 500);
+    } catch (error) {
+      console.error("Error fetching contracts:", error);
+      messageApi.error("Failed to load search results");
+    }
   }, [filters, messageApi]);
 
-  const handleViewDetails = useCallback((record) => {
-    setSelectedContract(record);
-  }, []);
+  const handleViewDetails = useCallback(
+    async (record) => {
+      try {
+        const loanIdNo = record["loanIdNo"];
+        const res = await detailsApi.post("/transaction/execute", {
+          subChannelId: "2",
+          subServiceId: "17",
+          attributes: { loanIdNo: loanIdNo },
+        });
+        if (res?.data?.attributes) {
+          setSelectedContract(res.data.attributes);
+        } else {
+          messageApi.error("Failed to load contract details");
+        }
+      } catch (error) {
+        console.error("Error fetching contract details:", error);
+        messageApi.error("Failed to load contract details");
+      }
+    },
+    [detailsApi, messageApi],
+  );
 
   const handleBackToSearch = useCallback(() => {
     setSelectedContract(null);
@@ -197,7 +174,7 @@ const ContractSearch = () => {
 
   const handleReset = useCallback(() => {
     setFilters([
-      { id: 1, searchType: "contractNo", searchValue: "" },
+      { id: 1, searchType: "P_CUSTOMER_ID", searchValue: "" },
       { id: 2, searchType: "branchNo", searchValue: "" },
     ]);
     setNextFilterId(3);
@@ -223,13 +200,13 @@ const ContractSearch = () => {
           </Button>
         ),
       },
-      {
-        title: "Contact No",
-        dataIndex: "contractNo",
-        key: "contractNo",
-        width: 140,
-        sorter: (a, b) => a.contractNo.localeCompare(b.contractNo),
-      },
+      // {
+      //   title: "Contact No",
+      //   dataIndex: "contactNo",
+      //   key: "contactNo",
+      //   width: 140,
+      //   sorter: (a, b) => a.contactNo.localeCompare(b.contactNo),
+      // },
       {
         title: "Branch No",
         dataIndex: "branchNo",
@@ -285,8 +262,19 @@ const ContractSearch = () => {
       {contextHolder}
       <AnimatePresence mode="wait">
         <div style={{ padding: "12px" }}>
-          {selectedContract ? (
-            // contact Details View
+          {detailsApi.loading ? (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: 300,
+              }}
+            >
+              <Spin size="large" tip="Loading contract details..." />
+            </div>
+          ) : selectedContract ? (
+            // Contract Details View
             <motion.div
               key="details"
               variants={detailsViewVariants}
@@ -315,7 +303,7 @@ const ContractSearch = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
               >
-                <ContractDetails contract={selectedContract} />
+                <ContractDetails contract={selectedContract.data[0]} />
               </motion.div>
             </motion.div>
           ) : (
@@ -404,7 +392,7 @@ const ContractSearch = () => {
                                     value,
                                   )
                                 }
-                                options={searchOptions}
+                                options={getAvailableOptions(filter.id)}
                                 style={{ width: "100%" }}
                                 placeholder="Select field"
                               />
@@ -470,6 +458,7 @@ const ContractSearch = () => {
                           type="dashed"
                           icon={<PlusOutlined />}
                           onClick={handleAddFilter}
+                          disabled={filters.length >= searchOptions.length}
                         >
                           Add Filter
                         </Button>
@@ -499,7 +488,7 @@ const ContractSearch = () => {
                     dataSource={tableData}
                     columns={columns}
                     rowKey="id"
-                    loading={loading}
+                    loading={searchApi.loading}
                     showExport={true}
                     onExport={(data) => {
                       console.log("Exporting data:", data);

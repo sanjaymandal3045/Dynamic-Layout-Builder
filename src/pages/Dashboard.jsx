@@ -27,7 +27,6 @@ const Dashboard = () => {
         const res = await getMenuListApi.post("/transaction/execute", {
           subChannelId: "2",
           subServiceId: "7",
-          traceNo: "1234567890",
           attributes: {},
         });
 

@@ -26,44 +26,37 @@ import { useApi } from "../utilities/axiosApiCall";
 
 const ContractDetails = ({ contract }) => {
   const [form] = Form.useForm();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [permissions, setPermissions] = useState({});
   const fetchPermissionsApi = useApi();
 
-  // Initialize permissions hook
-  const { getFieldPermission, isFieldVisible, isFieldEditable, getMaskedValue, renderWithPermission } =
-    useFieldPermissions(permissions);
+  useEffect(() => {
+    console.log("contract", contract);
+  }, [contract]);
 
-  // Dummy detailed data based on contract
-  const contractDetailData = {
-    ...contract,
-    status: "Active",
-    loanAmount: 500000,
-    currency: "BDT",
-    sanctionDate: "2023-01-15",
-    disbursementDate: "2023-02-01",
-    maturityDate: "2028-02-01",
-    interestRate: 12.5,
-    emi: 10750,
-    tenure: 60,
-    guaranter: "Guardian Bank Limited",
-  };
+  // Initialize permissions hook
+  const {
+    getFieldPermission,
+    isFieldVisible,
+    isFieldEditable,
+    getMaskedValue,
+    renderWithPermission,
+  } = useFieldPermissions(permissions);
 
   // Fetch permissions when edit is clicked
   const handleEditClick = async () => {
     try {
-       const menuParams = {
-          subChannelId: "2",
-          subServiceId: "15",
-          traceNo: "",
-          attributes: {
-            pageKey: "contract-search",
-          },
-        };
-        const result = await fetchPermissionsApi.post(
-          `/transaction/execute`,
-          menuParams,
-        );
+      const menuParams = {
+        subChannelId: "2",
+        subServiceId: "15",
+        attributes: {
+          pageKey: "contract-search",
+        },
+      };
+      const result = await fetchPermissionsApi.post(
+        `/transaction/execute`,
+        menuParams,
+      );
 
       if (result.success && result.data?.attributes?.permissions) {
         // Extract permissions from API response
@@ -98,13 +91,29 @@ const ContractDetails = ({ contract }) => {
   // Common header info section
   const HeaderInfo = () => {
     const headerFields = [
-      { label: "CONTACT NO", value: contractDetailData.contractNo, fieldId: "contactNo" },
-      { label: "BRANCH CODE", value: contractDetailData.branchNo, fieldId: "branchCode" },
-      { label: "BORROWER NAME", value: contractDetailData.borrowerName, fieldId: "borrowerName" },
-      { label: "PRODUCT CODE", value: contractDetailData.productCode, fieldId: "productCode" },
+      // {
+      //   label: "CONTACT NO",
+      //   value: contract.contractNo ?? contract.P_CUSTOMER_ID,
+      //   fieldId: "contactNo",
+      // },
+      {
+        label: "BRANCH CODE",
+        value: contract.branchNo,
+        fieldId: "branchCode",
+      },
+      {
+        label: "BORROWER NAME",
+        value: contract.borrowerName,
+        fieldId: "borrowerName",
+      },
+      {
+        label: "PRODUCT CODE",
+        value: contract.productCode,
+        fieldId: "productCode",
+      },
       {
         label: "LOAN ID NO",
-        value: contractDetailData.loanIdNo,
+        value: contract.loanIdNo,
         fieldId: "loanIdNo",
       },
     ];
@@ -149,7 +158,15 @@ const ContractDetails = ({ contract }) => {
   };
 
   // Form field wrapper with label and permission-based rendering
-  const FormField = ({ label, children, xs = 24, sm = 12, md = 8, lg = 4, fieldId }) => {
+  const FormField = ({
+    label,
+    children,
+    xs = 24,
+    sm = 12,
+    md = 8,
+    lg = 4,
+    fieldId,
+  }) => {
     // If fieldId is provided and not visible, don't render
     if (fieldId && !isFieldVisible(fieldId)) {
       return null;
@@ -159,9 +176,10 @@ const ContractDetails = ({ contract }) => {
     const isDisabled = fieldId && !canWrite;
 
     // Clone children to apply disabled state if needed
-    const enhancedChildren = fieldId && isDisabled ? 
-      React.cloneElement(children, { disabled: true }) : 
-      children;
+    const enhancedChildren =
+      fieldId && isDisabled
+        ? React.cloneElement(children, { disabled: true })
+        : children;
 
     return (
       <Col xs={xs} sm={sm} md={md} lg={lg}>
@@ -193,22 +211,31 @@ const ContractDetails = ({ contract }) => {
   const LoanAccountTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
-        <FormField label="SL. No." md={6} fieldId="slNo">
-          <Input placeholder="SL. No." />
-        </FormField>
-        <FormField label="Br. Code" md={6} fieldId="brCode">
+        <FormField label="Br. Code" md={6} fieldId="branchNo">
           <Input placeholder="Br. Code" defaultValue={contract.branchNo} />
         </FormField>
-        <FormField label="Br. Name" md={6} fieldId="brName">
-          <Input placeholder="Br. Name" />
+        <FormField label="Br. Name" md={6} fieldId="branchName">
+          <Input placeholder="Br. Name" defaultValue={contract.branchName} />
         </FormField>
-        <FormField label="Parent Br. Code" md={6} fieldId="parentBrCode">
-          <Input placeholder="Parent Br. Code" />
+        <FormField label="Parent Br. Code" md={6} fieldId="parentBranchCode">
+          <Input
+            placeholder="Parent Br. Code"
+            defaultValue={contract.parentBranchCode}
+          />
         </FormField>
-        <FormField label="Loan Description" md={8} fieldId="loanDesc">
-          <Input.TextArea placeholder="Loan Description" rows={1} />
+        <FormField label="Loan Description" md={8} fieldId="loanDescription">
+          <Input.TextArea
+            placeholder="Loan Description"
+            rows={1}
+            defaultValue={contract.loanDescription}
+          />
         </FormField>
-        <FormField label="Product Code" md={8} fieldId="productCode">
+        <FormField
+          label="Product Code"
+          md={8}
+          fieldId="productCode"
+          defaultValue={contract.productCode}
+        >
           <Input
             placeholder="Product Code"
             defaultValue={contract.productCode}
@@ -223,28 +250,48 @@ const ContractDetails = ({ contract }) => {
         <FormField label="Loan Identification No." md={8} fieldId="loanIdNo">
           <Input placeholder="Loan ID No." defaultValue={contract.loanIdNo} />
         </FormField>
-        <FormField label="Customer's Unique ID" md={8} fieldId="custUniqueId">
-          <Input placeholder="Customer's Unique ID" />
+        <FormField
+          label="Customer's Unique ID"
+          md={8}
+          fieldId="customerUniqueId"
+        >
+          <Input
+            placeholder="Customer's Unique ID"
+            defaultValue={contract.customerUniqueId}
+          />
         </FormField>
-        <FormField label="Amount Disbursed" md={8} fieldId="amtDisbursed">
-          <Input type="number" placeholder="Amount" defaultValue="500000" />
+        <FormField label="Amount Disbursed" md={8} fieldId="amountDisbursed">
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.amountDisbursed}
+          />
         </FormField>
-        <FormField label="Balance Outstanding" md={8} fieldId="balanceOutstanding">
+        <FormField
+          label="Balance Outstanding"
+          md={8}
+          fieldId="totalOutstanding"
+          defaultValue={contract.totalOutstanding}
+        >
           <Input
             type="number"
             placeholder="Balance Outstanding"
-            defaultValue="450000"
+            defaultValue={contract.balanceOutstanding}
           />
         </FormField>
-        <FormField label="Interest Rate" md={8} fieldId="interestRate">
+        <FormField label="Interest Rate" md={8} fieldId="rateOfInterest">
           <Input
             type="number"
             placeholder="Interest Rate %"
-            defaultValue="12.5"
+            defaultValue={contract.rateOfInterest}
           />
         </FormField>
-        <FormField label="Business Identification Number (BIN)/TIN" md={8} fieldId="binTin">
-          <Input placeholder="BIN/TIN" />
+        <FormField
+          label="Business Identification Number (BIN)/TIN"
+          md={8}
+          fieldId="tinBin"
+        >
+          <Input placeholder="BIN/TIN" defaultValue={contract.tinBin} />
         </FormField>
       </Row>
     </Form>
@@ -254,34 +301,57 @@ const ContractDetails = ({ contract }) => {
   const SanctionTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
-        <FormField label="Nature of Sanction" md={12} fieldId="natureOfSanction">
-          <Select
-            placeholder="Select Nature of Sanction"
-            options={[
-              { label: "New Sanction", value: "new" },
-              { label: "Reschedule", value: "reschedule" },
-              { label: "Restructure", value: "restructure" },
-            ]}
+        <FormField
+          label="Nature of Sanction"
+          md={12}
+          fieldId="natureOfSanction"
+        >
+          <Input
+            placeholder="Nature of Sanction"
+            defaultValue={contract.natureOfSanction}
           />
         </FormField>
-        <FormField label="Nature of Facilities" md={12} fieldId="natureOfFacilities">
-          <Select
-            placeholder="Select Nature of Facilities"
-            options={[
-              { label: "Term Loan", value: "term_loan" },
-              { label: "Credit Line", value: "credit_line" },
-              { label: "Overdraft", value: "overdraft" },
-            ]}
+        <FormField
+          label="Nature of Facilities"
+          md={12}
+          fieldId="natureOfFacilities"
+        >
+          <Input
+            placeholder="Nature of Facilities"
+            defaultValue={contract.natureOfFacilities}
           />
         </FormField>
-        <FormField label="Date of Sanction/Reschedule/Restructure" md={8} fieldId="dateOfSanction">
-          <Input placeholder="DD/MM/YY" />
+        <FormField
+          label="Date of First Sanction"
+          md={8}
+          fieldId="dateOfFirstSanction"
+        >
+          <Input
+            placeholder="DD/MM/YYYY"
+            defaultValue={contract.dateOfFirstSanction}
+          />
         </FormField>
-        <FormField label="Date of Expiry" md={8} fieldId="dateOfExpiry">
-          <Input placeholder="DD/MM/YY" />
+        <FormField
+          label="Date of Sanction Reschedule"
+          md={8}
+          fieldId="dateOfSanctionReschedule"
+        >
+          <Input
+            placeholder="DD/MM/YYYY"
+            defaultValue={contract.dateOfSanctionReschedule}
+          />
         </FormField>
-        <FormField label="Latest Sanctioned Limit" md={8} fieldId="latestSanctionedLimit">
-          <Input type="number" placeholder="Amount" defaultValue="500000" />
+        <FormField label="Date Of Renewal" md={8} fieldId="dateOfRenewal">
+          <Input
+            placeholder="DD/MM/YYYY"
+            defaultValue={contract.dateOfRenewal}
+          />
+        </FormField>
+        <FormField label="Date of Expiry" md={8} fieldId="maturityDate">
+          <Input
+            placeholder="DD/MM/YYYY"
+            defaultValue={contract.maturityDate}
+          />
         </FormField>
       </Row>
     </Form>
@@ -291,11 +361,33 @@ const ContractDetails = ({ contract }) => {
   const LimitDisbursementTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
-        <FormField label="Latest Sanctioned Limit" md={12} fieldId="sanctionedLimit">
-          <Input type="number" placeholder="Amount" defaultValue="500000" />
+        <FormField
+          label="Latest Sanctioned Limit"
+          md={8}
+          fieldId="latestSanctionLimit"
+        >
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.latestSanctionLimit}
+          />
         </FormField>
-        <FormField label="1st Disbursement Amount" md={12} fieldId="firstDisbursement">
-          <Input type="number" placeholder="Amount" defaultValue="500000" />
+        <FormField
+          label="Date Of First Disbursement"
+          md={8}
+          fieldId="firstDisbursementDate"
+        >
+          <Input
+            placeholder="DD/MM/YYYY"
+            defaultValue={contract.firstDisbursementDate}
+          />
+        </FormField>
+        <FormField
+          label="1st Disbursement Amount"
+          md={12}
+          fieldId="firstDisbursement"
+        >
+          <Input type="number" placeholder="Amount" />
         </FormField>
       </Row>
     </Form>
@@ -308,124 +400,321 @@ const ContractDetails = ({ contract }) => {
         <FormField
           label="Amount Due Since Sanctioning/Last Rescheduling/Restructuring"
           md={12}
-          fieldId="amountDue"
+          fieldId="dueSinceSanctionAmt"
         >
-          <Input type="number" placeholder="Amount" />
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.dueSinceSanctionAmt}
+          />
         </FormField>
         <FormField
           label="Amount Paid Since Sanctioning/Last Rescheduling/Restructuring"
           md={12}
-          fieldId="amountPaid"
+          fieldId="paidSinceSanctionAmt"
         >
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.paidSinceSanctionAmt}
+          />
+        </FormField>
+        <FormField label="Overdue Amount" md={12} fieldId="OverdueAmount">
           <Input type="number" placeholder="Amount" />
         </FormField>
-        <FormField label="Installment Frequency" md={12} fieldId="installmentFreq">
-          <Select
-            placeholder="Select Frequency"
-            options={[
-              { label: "Monthly", value: "monthly" },
-              { label: "Quarterly", value: "quarterly" },
-              { label: "Bi-annual", value: "biannual" },
-              { label: "Annual", value: "annual" },
-            ]}
+        <FormField
+          label="Defaulted Outstanding"
+          md={12}
+          fieldId="defaultedOutstanding"
+        >
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.defaultedOutstanding}
+          />
+        </FormField>
+        <FormField
+          label="Historical Recovery Data (Year wise)"
+          md={8}
+          fieldId="HistoricalData"
+        >
+          <Input placeholder="Year" defaultValue={""} />
+        </FormField>
+      </Row>
+    </Form>
+  );
+
+  // Tab 5: Installment Tab
+  const InstallmentTab = () => (
+    <Form form={form} layout="vertical" disabled={!isEditing}>
+      <Row gutter={[8, 8]}>
+        <FormField
+          label="Date Of First Installment"
+          md={8}
+          fieldId="dueDateOfFirstInstallment"
+        >
+          <Input
+            placeholder="DD/MM/YYYY"
+            defaultValue={contract.dueDateOfFirstInstallment}
+          />
+        </FormField>
+        <FormField label="Installment Size" md={12} fieldId="installmentSize">
+          <Input
+            type="number"
+            placeholder="installmentSize"
+            defaultValue={contract.installmentSize}
+          />
+        </FormField>
+        <FormField
+          label="Installment Frequency"
+          md={12}
+          fieldId="installmentFrequency"
+        >
+          <Input
+            placeholder="installmentFrequency"
+            defaultValue={contract.installmentFrequency}
+          />
+        </FormField>
+        <FormField
+          label="Due date of Last Installment"
+          md={8}
+          fieldId="lastInstDueDate"
+        >
+          <Input
+            placeholder="DD/MM/YYYY"
+            defaultValue={contract.lastInstDueDate}
           />
         </FormField>
       </Row>
     </Form>
   );
 
-  // Tab 5: CL Status
+  // Tab 6: CL Status
   const CLStatusTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
-        <FormField label="Time Equivalent of Amount Overdue (in months)" md={8} fieldId="timeOverdue">
-          <Input type="number" placeholder="Months" />
+        <FormField
+          label="Time Equivalent of Amount Overdue (in months)"
+          md={8}
+          fieldId="timeEquivalOdAmt"
+        >
+          <Input
+            type="number"
+            placeholder="Months"
+            defaultValue={contract.timeEquivalOdAmt}
+          />
         </FormField>
-        <FormField label="Time after expiry (if any) (in months)" md={8} fieldId="timeAfterExpiry">
-          <Input type="number" placeholder="Months" />
+        <FormField
+          label="Time after expiry (if any) (in months)"
+          md={8}
+          fieldId="timeAfterExpiry"
+        >
+          <Input
+            type="number"
+            placeholder="Months"
+            defaultValue={contract.timeAfterExpiry}
+          />
         </FormField>
-        <FormField label="Period of Overdue/Past Due (in Months)" md={8} fieldId="periodOverdue">
-          <Input type="number" placeholder="Months" />
+        <FormField
+          label="Period of Overdue/Past Due (in Months)"
+          md={8}
+          fieldId="periodOfArears"
+        >
+          <Input placeholder="Months" defaultValue={contract.periodOfArears} />
         </FormField>
         <FormField
           label="Preliminary Classification Objective Criteria (OC)"
           md={12}
-          fieldId="prelimClassOC"
+          fieldId="preliminaryStatusOfClOb"
         >
-          <Input placeholder="OC" />
-        </FormField>
-        <FormField label="Qualitative Judgment (QJ)" md={12} fieldId="qualitativeJudgment">
-          <Input placeholder="QJ" />
-        </FormField>
-        <FormField label="Final Classification Status" md={12} fieldId="finalClassStatus">
-          <Select
-            placeholder="Select Status"
-            options={[
-              { label: "Standard", value: "standard" },
-              { label: "Substandard", value: "substandard" },
-              { label: "Doubtful", value: "doubtful" },
-              { label: "Bad/Loss", value: "bad_loss" },
-            ]}
+          <Input
+            placeholder="OC"
+            defaultValue={contract.preliminaryStatusOfClOb}
           />
         </FormField>
-        <FormField label="Basis for Classification (OC/QJ)" md={12} fieldId="basisClassification">
-          <Select
-            placeholder="Select Basis"
-            options={[
-              { label: "OC - Objective Criteria", value: "oc" },
-              { label: "QJ - Qualitative Judgment", value: "qj" },
-            ]}
+        <FormField
+          label="Qualitative Judgment (QJ)"
+          md={12}
+          fieldId="preliminaryStatusOfClQj"
+        >
+          <Input
+            placeholder="QJ"
+            defaultValue={contract.preliminaryStatusOfClQj}
+          />
+        </FormField>
+        <FormField
+          label="Final Classification Status"
+          md={12}
+          fieldId="finalClStatus"
+        >
+          <Input
+            placeholder="finalClStatus"
+            defaultValue={contract.finalClStatus}
+          />
+        </FormField>
+        <FormField
+          label="Basis for Classification (OC/QJ)"
+          md={12}
+          fieldId="finalClStatusBasisForCl"
+        >
+          <Input
+            placeholder="finalClStatusBasisForCl"
+            defaultValue={contract.finalClStatusBasisForCl}
           />
         </FormField>
       </Row>
     </Form>
   );
 
-  // Tab 6: Provision
+  //Tab 7: Interest Suspense
+  const InterestSuspenseTab = () => (
+    <Form form={form} layout="vertical" disabled={!isEditing}>
+      <Row gutter={[8, 8]}>
+        <FormField
+          label="Manual Interest suspense"
+          md={12}
+          fieldId="manualSuspenseAmt"
+        >
+          <Input placeholder="QJ" defaultValue={contract.manualSuspenseAmt} />
+        </FormField>
+        <FormField
+          label="Automated Interest suspense "
+          md={12}
+          fieldId="autoIntSuspenseAmount"
+        >
+          <Input
+            placeholder="QJ"
+            type="number"
+            defaultValue={contract.autoIntSuspenseAmount}
+          />
+        </FormField>
+        <FormField
+          label="Total Interest Suspense"
+          md={12}
+          fieldId="totalSuspense"
+        >
+          <Input
+            placeholder="QJ"
+            type="number"
+            defaultValue={contract.totalSuspense}
+          />
+        </FormField>
+      </Row>
+    </Form>
+  );
+  //Tab 8: Collateral Security
+  const CollateralSecurityTab = () => (
+    <Form form={form} layout="vertical" disabled={!isEditing}>
+      <Row gutter={[8, 8]}>
+        <FormField label="Collateral Type" md={12} fieldId="collateralType">
+          <Input
+            placeholder="QJ"
+            type="number"
+            defaultValue={contract.collateralType}
+          />
+        </FormField>
+        <FormField
+          label="Value of Eligible Collateral "
+          md={12}
+          fieldId="valueOfEligibleSecurity"
+        >
+          <Input
+            placeholder="QJ"
+            type="number"
+            defaultValue={contract.valueOfEligibleSecurity}
+          />
+        </FormField>
+      </Row>
+    </Form>
+  );
+  // Tab 9: Provision
   const ProvisionTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
         <FormField
           label="Outstanding Amount-Interest Suspense-Value of eligible Collateral"
           md={12}
-          fieldId="outstandingAmt"
+          fieldId="osIntCollat"
         >
-          <Input placeholder="Details" />
+          <Input placeholder="Details" defaultValue={contract.osIntCollat} />
         </FormField>
-        <FormField label="SS_Base for Provision" md={12} fieldId="ssBaseProvision">
-          <Input type="number" placeholder="Amount" />
+        <FormField
+          label="SS_Base for Provision"
+          md={12}
+          fieldId="ssBaseProvision"
+        >
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.ssBaseProvision}
+          />
         </FormField>
-        <FormField label="DF_Base for Provision" md={12} fieldId="dfBaseProvision">
-          <Input type="number" placeholder="Amount" />
+        <FormField
+          label="DF_Base for Provision"
+          md={12}
+          fieldId="dfBaseProvision"
+        >
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.dfBaseProvision}
+          />
         </FormField>
-        <FormField label="B/L_Base for Provision" md={12} fieldId="blBaseProvision">
-          <Input type="number" placeholder="Amount" />
+        <FormField
+          label="B/L_Base for Provision"
+          md={12}
+          fieldId="blBaseProvision"
+        >
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.blBaseProvision}
+          />
         </FormField>
-        <FormField label="Amount of Provision Required" md={12} fieldId="provisionRequired">
-          <Input type="number" placeholder="Amount" />
+        <FormField
+          label="Amount of Provision Required"
+          md={12}
+          fieldId="reqProvisionAmt"
+        >
+          <Input
+            type="number"
+            placeholder="Amount"
+            defaultValue={contract.reqProvisionAmt}
+          />
         </FormField>
       </Row>
     </Form>
   );
 
-  // Tab 7: BB Sector
+  // Tab 10: BB Sector
   const BBSectorTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
-        <FormField label="BB Category As per CL Statement" md={12} fieldId="bbCategory">
-          <Input placeholder="Category" />
+        <FormField
+          label="BB Category As per CL Statement"
+          md={12}
+          fieldId="loanBbCategory"
+        >
+          <Input placeholder="loanBbCategory" />
         </FormField>
         <FormField label="Sector Code As per SBS" md={12} fieldId="sectorCode">
-          <Input placeholder="Sector Code" />
+          <Input placeholder="Sector Code" defaultValue={contract.sectorCode} />
         </FormField>
         <FormField label="Sector Name As per SBS" md={12} fieldId="sectorName">
-          <Input placeholder="Sector Name" />
+          <Input placeholder="Sector Name" defaultValue={contract.sectorName} />
         </FormField>
-        <FormField label="Product Code as per SBS" md={12} fieldId="productCodeSBS">
-          <Input placeholder="Product Code" />
+        <FormField
+          label="Product Code as per SBS"
+          md={12}
+          fieldId="sbsProductCode"
+        >
+          <Input
+            placeholder="Product Code"
+            defaultValue={contract.sbsProductCode}
+          />
         </FormField>
         <FormField label="SME Code as per SBS" md={12} fieldId="smeCode">
-          <Input placeholder="SME Code" />
+          <Input placeholder="SME Code" defaultValue={contract.smeCode} />
         </FormField>
         <FormField label="Sector As per CL" md={12} fieldId="sectorCL">
           <Input placeholder="Sector" />
@@ -434,32 +723,60 @@ const ContractDetails = ({ contract }) => {
     </Form>
   );
 
-  // Tab 8: Rating
+  // Tab 11: Rating
   const RatingTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
-        <FormField label="ECAI Rating Agency" md={12} fieldId="ecaiRatingAgency">
+        <FormField
+          label="ECAI Rating Agency"
+          md={12}
+          fieldId="ecaiRatingAgency"
+        >
           <Input placeholder="Agency Name" />
         </FormField>
         <FormField label="ECAI Rating Long Term" md={12} fieldId="ecaiRatingLT">
           <Input placeholder="Rating" />
         </FormField>
-        <FormField label="ECAI Rating Short Term" md={12} fieldId="ecaiRatingST">
+        <FormField
+          label="ECAI Rating Short Term"
+          md={12}
+          fieldId="ecaiRatingST"
+        >
           <Input placeholder="Rating" />
         </FormField>
-        <FormField label="ECAI Rating Validity" md={12} fieldId="ecaiRatingValidity">
-          <Input placeholder="DD/MM/YY" />
+        <FormField
+          label="ECAI Rating Validity"
+          md={12}
+          fieldId="ecaiRatingValidity"
+        >
+          <Input placeholder="DD/MM/YYYY" />
         </FormField>
-        <FormField label="First ICRRS rating" md={12} fieldId="firstICRRSRating">
+        <FormField
+          label="First ICRRS rating"
+          md={12}
+          fieldId="firstICRRSRating"
+        >
           <Input placeholder="Rating" />
         </FormField>
-        <FormField label="Latest ICRRS rating" md={12} fieldId="latestICRRSRating">
+        <FormField
+          label="Latest ICRRS rating"
+          md={12}
+          fieldId="latestICRRSRating"
+        >
           <Input placeholder="Rating" />
         </FormField>
-        <FormField label="Latest ICRRS rating Validity" md={12} fieldId="latestICRRSValidity">
-          <Input placeholder="DD/MM/YY" />
+        <FormField
+          label="Latest ICRRS rating Validity"
+          md={12}
+          fieldId="latestICRRSValidity"
+        >
+          <Input placeholder="DD/MM/YYYY" />
         </FormField>
-        <FormField label="Latest ICRRS Total Score" md={12} fieldId="icrrsScore">
+        <FormField
+          label="Latest ICRRS Total Score"
+          md={12}
+          fieldId="icrrsScore"
+        >
           <Input type="number" placeholder="Score" />
         </FormField>
         <FormField label="Net Operating Income" md={12} fieldId="netOpIncome">
@@ -469,7 +786,7 @@ const ContractDetails = ({ contract }) => {
     </Form>
   );
 
-  // Tab 9: Company Balance Sheet
+  // Tab 12: Company Balance Sheet
   const CompanyBalanceSheetTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
@@ -495,19 +812,39 @@ const ContractDetails = ({ contract }) => {
         <FormField label="Net Credit Sales" md={12} fieldId="netCreditSales">
           <Input type="number" placeholder="Amount" />
         </FormField>
-        <FormField label="Average Account Receivable" md={12} fieldId="avgAcctReceivable">
+        <FormField
+          label="Average Account Receivable"
+          md={12}
+          fieldId="avgAcctReceivable"
+        >
           <Input type="number" placeholder="Amount" />
         </FormField>
-        <FormField label="Net Credit Purchase" md={12} fieldId="netCreditPurchase">
+        <FormField
+          label="Net Credit Purchase"
+          md={12}
+          fieldId="netCreditPurchase"
+        >
           <Input type="number" placeholder="Amount" />
         </FormField>
-        <FormField label="Average Account Payable" md={12} fieldId="avgAcctPayable">
+        <FormField
+          label="Average Account Payable"
+          md={12}
+          fieldId="avgAcctPayable"
+        >
           <Input type="number" placeholder="Amount" />
         </FormField>
-        <FormField label="Average Total Assets" md={12} fieldId="avgTotalAssets">
+        <FormField
+          label="Average Total Assets"
+          md={12}
+          fieldId="avgTotalAssets"
+        >
           <Input type="number" placeholder="Amount" />
         </FormField>
-        <FormField label="Shareholders' Equity" md={12} fieldId="shareholdersEquity">
+        <FormField
+          label="Shareholders' Equity"
+          md={12}
+          fieldId="shareholdersEquity"
+        >
           <Input type="number" placeholder="Amount" />
         </FormField>
         <FormField label="Long-Term Debt" md={12} fieldId="longTermDebt">
@@ -516,7 +853,11 @@ const ContractDetails = ({ contract }) => {
         <FormField label="Current Assets" md={12} fieldId="currentAssets">
           <Input type="number" placeholder="Amount" />
         </FormField>
-        <FormField label="Current Liabilities" md={12} fieldId="currentLiabilities">
+        <FormField
+          label="Current Liabilities"
+          md={12}
+          fieldId="currentLiabilities"
+        >
           <Input type="number" placeholder="Amount" />
         </FormField>
         <FormField label="Inventory" md={12} fieldId="inventory">
@@ -535,34 +876,38 @@ const ContractDetails = ({ contract }) => {
           <Input type="number" placeholder="Ratio" step="0.01" />
         </FormField>
         <FormField label="Financial Date" md={12} fieldId="financialDate">
-          <Input placeholder="DD/MM/YY" />
+          <Input placeholder="DD/MM/YYYY" />
         </FormField>
       </Row>
     </Form>
   );
 
-  // Tab 10: Others
+  // Tab 13: Others
   const OthersTab = () => (
     <Form form={form} layout="vertical" disabled={!isEditing}>
       <Row gutter={[8, 8]}>
-        <FormField label="Remarks (CIB Status etc.)" md={24} xs={24} fieldId="remarks">
+        <FormField
+          label="Remarks (CIB Status etc.)"
+          md={24}
+          xs={24}
+          fieldId="remarks"
+        >
           <Input.TextArea placeholder="Remarks" rows={1} />
         </FormField>
-        <FormField label="Grace Period/Moratorium Period (in Months)" md={12} fieldId="gracePeriod">
+        <FormField
+          label="Grace Period/Moratorium Period (in Months)"
+          md={12}
+          fieldId="gracePeriod"
+        >
           <Input type="number" placeholder="Months" />
         </FormField>
         <FormField label="CL-Remarks" md={12} fieldId="clRemarks">
           <Input.TextArea placeholder="CL Remarks" rows={1} />
         </FormField>
         <FormField label="Loan belongs to" md={12} fieldId="loanCategory">
-          <Select
-            placeholder="Select Category"
-            options={[
-              { label: "Individual", value: "individual" },
-              { label: "Small Business", value: "small_business" },
-              { label: "Medium Business", value: "medium_business" },
-              { label: "Corporate", value: "corporate" },
-            ]}
+          <Input
+            placeholder="loanCategory"
+            defaultValue={contract.loanCategory}
           />
         </FormField>
       </Row>
@@ -592,31 +937,46 @@ const ContractDetails = ({ contract }) => {
     },
     {
       key: "5",
+      label: "Installment",
+      children: <InstallmentTab />,
+    },
+    {
+      key: "6",
       label: "CL Status",
       children: <CLStatusTab />,
     },
     {
-      key: "6",
+      key: "7",
+      label: "Interest Suspense",
+      children: <InterestSuspenseTab />,
+    },
+    {
+      key: "8",
+      label: "Collateral Security",
+      children: <CollateralSecurityTab />,
+    },
+    {
+      key: "9",
       label: "Provision",
       children: <ProvisionTab />,
     },
     {
-      key: "7",
+      key: "10",
       label: "BB Sector",
       children: <BBSectorTab />,
     },
     {
-      key: "8",
+      key: "11",
       label: "Rating",
       children: <RatingTab />,
     },
     {
-      key: "9",
+      key: "12",
       label: "Company Balance Sheet",
       children: <CompanyBalanceSheetTab />,
     },
     {
-      key: "10",
+      key: "13",
       label: "Others",
       children: <OthersTab />,
     },
@@ -632,7 +992,10 @@ const ContractDetails = ({ contract }) => {
           borderRadius: "12px",
           boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
         }}
-        styles={{ body: { padding: "0px 12px" }, header: { fontSize: "18px", fontWeight: "bold" } }}
+        styles={{
+          body: { padding: "0px 12px" },
+          header: { fontSize: "18px", fontWeight: "bold" },
+        }}
         title={"Contact Details"}
         extra={
           <>

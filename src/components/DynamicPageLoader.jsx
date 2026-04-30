@@ -23,7 +23,6 @@ const DynamicPageLoader = ({ pageKey }) => {
         const menuParams = {
           subChannelId: "2",
           subServiceId: "9",
-          traceNo: "",
           attributes: {
             pageKey: pageKey,
           },
