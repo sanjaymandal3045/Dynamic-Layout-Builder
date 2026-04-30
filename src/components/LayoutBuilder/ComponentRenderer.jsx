@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Select,
   Input,
@@ -9,20 +9,47 @@ import {
   Table,
   Space,
   message,
+  Tooltip,
 } from "antd";
 import { DeleteOutlined, LockOutlined } from "@ant-design/icons";
 import { useApi } from "../../utilities/axiosApiCall";
+import CustomTable from "../UI/CustomTable";
+import FilterSearchPanel from "../UI/FilterSearchPanel";
+import CheckboxComponent from "../UI/CheckboxComponent";
 
 const { Text } = Typography;
+
+// ── Shared field-label style ───────────────────────────────────────────────────
+const FieldLabel = ({ label, required, disabled, locked }) => (
+  <label style={labelStyle}>
+    <span style={labelText}>{label}</span>
+    {required && <span style={requiredDot}>*</span>}
+    {locked && (
+      <Tooltip title="Read-only field">
+        <LockOutlined
+          style={{ fontSize: 11, color: "#f59e0b", flexShrink: 0 }}
+        />
+      </Tooltip>
+    )}
+  </label>
+);
+
+// ── Field wrapper: consistent padding for every grid cell ─────────────────────
+const FieldWrap = ({ gridColumn, children }) => (
+  <div style={{ gridColumn, padding: "0 8px" }}>{children}</div>
+);
 
 const ComponentRenderer = ({
   component,
   value,
   onValueChange,
   onBtnClick,
+  onFilterSearch,
   onRowAction,
+  onViewDetails,
   disabled,
   refreshTrigger,
+  externalData,
 }) => {
   const [apiData, setApiData] = useState([]);
   const [tableData, setTableData] = useState([]);
@@ -30,450 +57,428 @@ const ComponentRenderer = ({
   const [tableLoading, setTableLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   const [pageSize, setPageSize] = useState(10);
+  const [searchText, setSearchText] = useState("");
+
+  const filteredTableData = useMemo(() => {
+    if (!searchText) return tableData;
+    const lowerSearch = searchText.toLowerCase();
+    return tableData.filter((item) =>
+      Object.keys(item).some((key) =>
+        String(item[key]).toLowerCase().includes(lowerSearch),
+      ),
+    );
+  }, [tableData, searchText]);
 
   const dataTableApi = useApi();
 
-  // ===== PERMISSION UTILITIES =====
-  const parsePermissions = (permissionString) => {
-    if (!permissionString || permissionString.length < 2) {
+  // ── Permission helpers ───────────────────────────────────────────────────────
+  const parsePermissions = (str) => {
+    if (!str || str.length < 2)
       return { canRead: true, canWrite: true, canMask: false };
-    }
     return {
-      canRead: permissionString[0] === '1',
-      canWrite: permissionString[1] === '1',
-      canMask: permissionString[2] === '1',
+      canRead: str[0] === "1",
+      canWrite: str[1] === "1",
+      canMask: str[2] === "1",
     };
   };
 
-  // Check if component should be visible and enabled based on permissions
-  const getComponentState = (component) => {
-    const permissions = parsePermissions(component.permissionString);
-    
+  const getComponentState = (comp) => {
+    const permissions = parsePermissions(comp.permissionString);
     return {
-      isVisible: permissions.canRead, // Hide if no read permission
-      isDisabled: !permissions.canWrite, // Disable if no write permission
+      isVisible: permissions.canRead,
+      isDisabled: !permissions.canWrite,
       permissions,
     };
   };
 
-  // ===== END PERMISSION UTILITIES =====
-
-  // Fetch dropdown data for select components
+  // ── Fetch dropdown data (API-sourced selects) ────────────────────────────────
   useEffect(() => {
     if (component.type === "select" && component.dataSource === "api") {
       if (!component.dataUrl) return;
-
       const fetchData = async () => {
         setLoading(true);
         try {
-          // Placeholder for real API call
-          await new Promise((resolve) => setTimeout(resolve, 800));
-          const dummyApiResponse = [
-            { label: "Dynamic Item 1", value: "d1" },
-            { label: "Dynamic Item 2", value: "d2" },
-          ];
-          setApiData(dummyApiResponse);
-        } catch (error) {
-          console.error("Failed to fetch dropdown data", error);
+          const apiCfg = component.selectApiCommon || {};
+          const method = apiCfg.method || "post";
+          let res;
+
+          if (method === "get") {
+            res = await dataTableApi.get(component.dataUrl);
+          } else {
+            const payload = {
+              subChannelId: apiCfg.subChannelId,
+              subServiceId: apiCfg.subServiceId,
+              attributes: {},
+            };
+            res = await dataTableApi.post(component.dataUrl, payload);
+          }
+
+          // Standardised response shape:
+          // { data: { attributes: { dropdownValues: [{ label, value }] } } }
+          const dropdownValues = res?.data?.attributes?.dropdownValues;
+          if (Array.isArray(dropdownValues)) {
+            setApiData(dropdownValues);
+          } else {
+            console.warn("Unexpected dropdown API response shape:", res);
+            messageApi.warning("Dropdown API returned an unexpected format.");
+          }
+        } catch (e) {
+          console.error("Failed to fetch dropdown data", e);
+          messageApi.error("Failed to load dropdown options.");
         } finally {
           setLoading(false);
         }
       };
-
       fetchData();
     }
-  }, [component.dataSource, component.dataUrl, component.type]);
+  }, [
+    component.dataSource,
+    component.dataUrl,
+    component.type,
+    component.selectApiCommon,
+  ]);
 
-  // Fetch table data
+  // ── Fetch table data ─────────────────────────────────────────────────────────
+  // Fetch table data when dataUrl, type or refreshTrigger changes
   useEffect(() => {
     if (component.type === "table" && component.dataUrl) {
       fetchTableData();
     }
   }, [component.dataUrl, component.type, refreshTrigger]);
 
-  // Function to fetch table data
   const fetchTableData = async () => {
     setTableLoading(true);
     try {
-      console.log("Component", component);
       const menuParams = {
         subChannelId: component.tableApiCommon.subChannelId,
         subServiceId: component.tableApiCommon.subServiceId,
-        traceNo: component.tableApiCommon.traceNo,
         attributes: {},
       };
-
       const res = await dataTableApi.post(component.dataUrl, menuParams);
-      console.log("res", res);
-      if (res?.data) {
-        const dynamicMenu = res.data.attributes.menuTree;
-        setTableData(dynamicMenu);
-      }
-    } catch (error) {
-      console.error("Failed to fetch table data", error);
+      if (res?.data) setTableData(res.data.attributes.menuTree);
+    } catch (e) {
+      console.error("Failed to fetch table data", e);
       messageApi.error("Failed to load table data");
     } finally {
       setTableLoading(false);
     }
   };
 
-  // Get layout values
+  // ── Grid layout helpers ──────────────────────────────────────────────────────
   const offset = component.layout?.offset || 0;
   const colSpan = component.layout?.colSpan || 1;
 
-  // Calculate gridColumn value
   const getGridColumn = () => {
-    // Full width components
     if (
       component.type === "divider" ||
       component.type === "newline" ||
       component.type === "table"
-    ) {
+    )
       return "1 / -1";
-    }
-    // Components with offset
-    if (offset > 0) {
-      return `${offset + 1} / span ${colSpan}`;
-    }
-    // Normal span
+    if (offset > 0) return `${offset + 1} / span ${colSpan}`;
     return `span ${colSpan}`;
   };
 
-  const gridColumnStyle = {
-    gridColumn: getGridColumn(),
-  };
+  const gc = getGridColumn();
 
-  // Wrapper for content
-  const renderWrapper = (children) => (
-    <div className="flex justify-center items-center h-full w-full p-2">
-      {children}
-    </div>
-  );
-
-  // Utility function to search for a field by name in the entire response object
+  // ── onBlur API helper ────────────────────────────────────────────────────────
   const searchFieldInResponse = (obj, fieldName) => {
-    if (!obj || typeof obj !== 'object') return undefined;
-
-    // Check if current object has the field
-    if (obj.hasOwnProperty(fieldName)) {
+    if (!obj || typeof obj !== "object") return undefined;
+    if (Object.prototype.hasOwnProperty.call(obj, fieldName))
       return obj[fieldName];
-    }
-
-    // If it's an array, search each item
     if (Array.isArray(obj)) {
-      for (let item of obj) {
-        const result = searchFieldInResponse(item, fieldName);
-        if (result !== undefined) return result;
+      for (const item of obj) {
+        const r = searchFieldInResponse(item, fieldName);
+        if (r !== undefined) return r;
       }
     } else {
-      // If it's an object, search all values
-      for (let key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          const result = searchFieldInResponse(obj[key], fieldName);
-          if (result !== undefined) return result;
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          const r = searchFieldInResponse(obj[key], fieldName);
+          if (r !== undefined) return r;
         }
       }
     }
-
     return undefined;
   };
 
-  // ===== RENDER CONTENT BASED ON COMPONENT TYPE =====
+  // ── RENDER ─────────────────────────────────────────────────────────────────────
   const renderComponentContent = () => {
     switch (component.type) {
-      case "field":
-        const componentState = getComponentState(component);
-        
-        // If no read permission, don't render the field
-        if (!componentState.isVisible) {
-          return null;
-        }
+      // ── Text Input Field ───────────────────────────────────────────────────
+      case "field": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
+
+        const isDisabled = disabled || state.isDisabled;
 
         const handleFieldBlur = async () => {
-          if (component.onBlurApi?.enabled && component.onBlurApi?.url) {
-            try {
-              const payload = {
-                subChannelId: component.onBlurApi?.apiCommon?.subChannelId,
-                subServiceId: component.onBlurApi?.apiCommon?.subServiceId,
-                traceNo: component.onBlurApi?.apiCommon?.traceNo,
-                attributes: {
-                  [component.name]: value,
-                },
-              };
-
-              const response = await dataTableApi.post(
-                component.onBlurApi.url,
-                payload,
-              );
-
-              console.log("onBlur API Response:", response);
-
-              if (response?.data) {
-                // Map API response fields to form fields
-                const mappingsExecution = component.onBlurApi.fieldMappings?.map((mapping) => {
-                  // Search the entire response for the field name
-                  const apiValue = searchFieldInResponse(response.data, mapping.apiResponseField);
-
-                  if (apiValue !== undefined && apiValue !== null) {
-                    onValueChange(mapping.targetFieldName, apiValue);
-                    return true;
-                  }
-                  return false;
-                });
-
-                const successCount = mappingsExecution?.filter(Boolean).length || 0;
-                if (successCount > 0) {
-                  messageApi.success(
-                    `Data fetched successfully (${successCount} field${successCount > 1 ? 's' : ''} populated)`
-                  );
-                } else {
-                  messageApi.warning(
-                    "API response received but no matching fields found."
-                  );
+          if (!component.onBlurApi?.enabled || !component.onBlurApi?.url)
+            return;
+          try {
+            const payload = {
+              subChannelId: component.onBlurApi?.apiCommon?.subChannelId,
+              subServiceId: component.onBlurApi?.apiCommon?.subServiceId,
+              attributes: { [component.name]: value },
+            };
+            const response = await dataTableApi.post(
+              component.onBlurApi.url,
+              payload,
+            );
+            if (response?.data) {
+              const mappings = component.onBlurApi.fieldMappings?.map((m) => {
+                const v = searchFieldInResponse(
+                  response.data,
+                  m.apiResponseField,
+                );
+                if (v !== undefined && v !== null) {
+                  onValueChange(m.targetFieldName, v);
+                  return true;
                 }
-              }
-            } catch (error) {
-              console.error("onBlur API call failed:", error);
-              messageApi.error("Failed to fetch data on blur");
+                return false;
+              });
+              const ok = mappings?.filter(Boolean).length || 0;
+              if (ok > 0)
+                messageApi.success(`${ok} field${ok > 1 ? "s" : ""} populated`);
+              else
+                messageApi.warning(
+                  "API response received but no matching fields found.",
+                );
             }
+          } catch (e) {
+            console.error("on-Tab-press API call failed:", e);
+            messageApi.error("Failed to fetch data on blur");
           }
         };
 
-        const isFieldDisabled = disabled || componentState.isDisabled;
-
         return (
-          <div style={gridColumnStyle}>
-            {renderWrapper(
-              <div className="flex flex-col w-full gap-2">
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  {component.label}{" "}
-                  {component.required && <span className="text-red-500">*</span>}
-                  {componentState.isDisabled && (
-                    <LockOutlined className="text-xs text-orange-500" title="Read-only" />
-                  )}
-                </label>
-                <Input
-                  type={component.fieldType}
-                  placeholder={component.placeholder}
-                  value={value || ""}
-                  onChange={(e) => onValueChange(component.name, e.target.value)}
-                  onBlur={handleFieldBlur}
-                  className="rounded-md"
-                  disabled={isFieldDisabled}
-                  status={componentState.isDisabled ? "warning" : ""}
-                />
-              </div>,
-            )}
-          </div>
+          <FieldWrap gridColumn={gc}>
+            <div style={fieldGroup}>
+              <FieldLabel
+                label={component.label}
+                required={component.required}
+                locked={state.isDisabled}
+              />
+              <Input
+                type={component.fieldType}
+                placeholder={component.placeholder}
+                value={value || ""}
+                onChange={(e) => onValueChange(component.name, e.target.value)}
+                onBlur={handleFieldBlur}
+                disabled={isDisabled}
+                status={state.isDisabled ? "warning" : ""}
+                style={inputStyle(isDisabled)}
+              />
+            </div>
+          </FieldWrap>
         );
+      }
 
-      case "text":
-        const textComponentState = getComponentState(component);
-        
-        // If no read permission, don't render
-        if (!textComponentState.isVisible) {
-          return null;
-        }
-
+      // ── Static Text ────────────────────────────────────────────────────────
+      case "text": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
         return (
-          <div style={gridColumnStyle}>
-            {renderWrapper(
-              <Text
-                style={{
-                  fontSize: component.fontSize || 16,
-                  fontWeight: component.fontWeight || 400,
-                  color: component.color || "#1a1a1a",
-                }}
-                className="leading-relaxed text-center px-4"
-              >
-                {component.content}
-              </Text>,
-            )}
-          </div>
+          <FieldWrap gridColumn={gc}>
+            <Text
+              style={{
+                fontSize: component.fontSize || 14,
+                fontWeight: component.fontWeight || 400,
+                color: component.color || "#334155",
+                lineHeight: 1.6,
+                display: "block",
+                padding: "6px 0",
+              }}
+            >
+              {component.content}
+            </Text>
+          </FieldWrap>
         );
+      }
 
-      case "button":
-        const buttonComponentState = getComponentState(component);
-        
-        // If no read permission, don't render
-        if (!buttonComponentState.isVisible) {
-          return null;
-        }
+      // ── Button ─────────────────────────────────────────────────────────────
+      case "button": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
+        const isDisabled = disabled || state.isDisabled;
 
-        const getButtonProps = (variant) => {
-          switch (variant) {
-            case "primary":
-              return {
-                type: "primary",
-                className: "bg-blue-600 hover:bg-blue-700 border-blue-600",
-              };
-            case "default":
-              return {
-                type: "default",
-                className:
-                  "border-slate-300 hover:border-blue-500 hover:text-blue-500",
-              };
-            case "dashed":
-              return {
-                type: "dashed",
-                className:
-                  "border-slate-300 hover:border-blue-500 hover:text-blue-500",
-              };
-            case "text":
-              return {
-                type: "text",
-                className: "text-slate-600 hover:text-blue-500",
-              };
-            case "link":
-              return {
-                type: "link",
-                className: "text-blue-500 hover:text-blue-700",
-              };
-            default:
-              return {
-                type: "default",
-                className:
-                  "border-slate-300 hover:border-blue-500 hover:text-blue-500",
-              };
+        // ── Filter Search Panel mode ─────────────────────────────────────────
+        if (component.filterSearch?.enabled) {
+          const opts = component.filterSearch.searchOptions || [];
+          if (opts.length === 0) {
+            return (
+              <div style={{ gridColumn: gc, padding: "0 8px" }}>
+                <p style={{ color: "#f59e0b", fontSize: 12 }}>
+                  ⚠ Filter Search enabled but no options configured.
+                </p>
+              </div>
+            );
           }
-        };
+          return (
+            <div style={{ gridColumn: "1 / -1", padding: "0 8px" }}>
+              <FilterSearchPanel
+                searchOptions={opts}
+                multiFilter={component.filterSearch.multiFilter !== false}
+                buttonLabel={component.label || "Search"}
+                isLoading={isDisabled}
+                onSearch={(attrs) => onFilterSearch?.(attrs)}
+              />
+            </div>
+          );
+        }
 
-        const buttonProps = getButtonProps(component.variant);
-        const isButtonDisabled = disabled || buttonComponentState.isDisabled;
+        // ── Regular button mode ──────────────────────────────────────────────
+        const variantMap = {
+          primary: { type: "primary" },
+          default: { type: "default" },
+          dashed: { type: "dashed" },
+          text: { type: "text" },
+          link: { type: "link" },
+        };
+        const btnProps = variantMap[component.variant] ?? { type: "default" };
 
         return (
-          <div style={gridColumnStyle}>
-            {renderWrapper(
-              <Button
-                {...buttonProps}
-                onClick={() => {
-                  onBtnClick();
-                }}
-                disabled={isButtonDisabled}
-                className={`h-10 px-6 font-medium shadow-sm transition-all duration-200 ${buttonProps.className}`}
-                title={isButtonDisabled ? "This action is not permitted" : ""}
-              >
-                {component.label}
-              </Button>,
-            )}
+          <div style={{ gridColumn: gc }}>
+            <Button
+              {...btnProps}
+              onClick={onBtnClick}
+              disabled={isDisabled}
+              title={isDisabled ? "This action is not permitted" : ""}
+              style={{
+                height: 38,
+                paddingInline: 24,
+                fontWeight: 600,
+                fontSize: 13,
+                borderRadius: 8,
+                transition: "all 0.2s",
+              }}
+            >
+              {component.label}
+            </Button>
           </div>
         );
+      }
 
+      // ── Spacer ─────────────────────────────────────────────────────────────
       case "spacer":
         return (
           <div
-            style={{
-              ...gridColumnStyle,
-              height: `${component.height || 16}px`,
-            }}
+            style={{ gridColumn: gc, height: `${component.height || 16}px` }}
           />
         );
 
+      // ── Divider ────────────────────────────────────────────────────────────
       case "divider":
         return (
-          <div>
-            {renderWrapper(<Divider className="my-4 border-slate-200" />)}
+          <div style={{ gridColumn: gc, padding: "0 8px" }}>
+            <Divider
+              dashed={component.dashed}
+              orientation={component.orientation || "center"}
+              plain={component.plain}
+              style={{ margin: "20px 0 10px 0", borderColor: "#106144" }}
+            >
+              {component.title}
+            </Divider>
           </div>
         );
 
-      case "card":
-        const cardComponentState = getComponentState(component);
-        
-        // If no read permission, don't render
-        if (!cardComponentState.isVisible) {
-          return null;
-        }
-
+      // ── Card ───────────────────────────────────────────────────────────────
+      case "card": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
         return (
-          <div style={gridColumnStyle}>
-            {renderWrapper(
-              <Card
-                title={component.title}
-                bordered={component.bordered !== false}
-                className="shadow-sm rounded-lg bg-white"
-                styles={{
-                  header: {
-                    fontWeight: 600,
-                    borderBottom: "1px solid #f0f0f0",
-                  },
-                  body: {
-                    color: "#64748b",
-                    padding: "16px",
-                  },
-                }}
-              >
-                {component.children}
-              </Card>,
-            )}
-          </div>
+          <FieldWrap gridColumn={gc}>
+            <Card
+              title={component.title}
+              bordered
+              size="small"
+              style={{
+                borderRadius: 10,
+                border: "1px solid #e8edf2",
+                boxShadow: "0 1px 4px rgba(15,23,42,0.06)",
+              }}
+              styles={{
+                header: {
+                  fontWeight: 600,
+                  fontSize: 13,
+                  borderBottom: "1px solid #f1f5f9",
+                },
+                body: { color: "#64748b", padding: 14 },
+              }}
+            >
+              {component.children}
+            </Card>
+          </FieldWrap>
         );
+      }
 
+      // ── Newline ────────────────────────────────────────────────────────────
       case "newline":
-        return <div />;
+        return <div style={{ gridColumn: "1 / -1" }} />;
 
-      case "select":
-        const selectComponentState = getComponentState(component);
-        
-        // If no read permission, don't render
-        if (!selectComponentState.isVisible) {
-          return null;
-        }
+      // ── Select ─────────────────────────────────────────────────────────────
+      case "select": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
 
-        // Filter out empty objects from options
         const validOptions = (component.options || []).filter(
-          (opt) => opt && opt.label && opt.value !== undefined,
+          (o) => o && o.label && o.value !== undefined,
         );
-
-        const isSelectDisabled = disabled || selectComponentState.isDisabled;
+        const isDisabled = disabled || state.isDisabled;
 
         return (
-          <div style={gridColumnStyle}>
-            {renderWrapper(
-              <div className="flex flex-col w-full gap-2">
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  {component.label}{" "}
-                  {component.required && <span className="text-red-500">*</span>}
-                  {selectComponentState.isDisabled && (
-                    <LockOutlined className="text-xs text-orange-500" title="Read-only" />
-                  )}
-                </label>
-                <Select
-                  className="w-full"
-                  placeholder={component.placeholder}
-                  loading={loading}
-                  value={value || undefined}
-                  onChange={(val) => onValueChange(component.name, val)}
-                  options={
-                    component.dataSource === "api" ? apiData : validOptions
-                  }
-                  allowClear
-                  disabled={isSelectDisabled}
-                />
-              </div>,
-            )}
-          </div>
+          <FieldWrap gridColumn={gc}>
+            <div style={fieldGroup}>
+              <FieldLabel
+                label={component.label}
+                required={component.required}
+                locked={state.isDisabled}
+              />
+              <Select
+                style={{ width: "100%", ...inputStyle(isDisabled) }}
+                placeholder={component.placeholder}
+                loading={loading}
+                value={value || undefined}
+                onChange={(val) => onValueChange(component.name, val)}
+                options={
+                  component.dataSource === "api" ? apiData : validOptions
+                }
+                allowClear
+                disabled={isDisabled}
+                showSearch
+                filterOption={(input, option) =>
+                  String(option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+                popupMatchSelectWidth={false}
+              />
+            </div>
+          </FieldWrap>
         );
+      }
 
-      case "table":
-        const tableComponentState = getComponentState(component);
-        
-        // If no read permission, don't render
-        if (!tableComponentState.isVisible) {
-          return null;
-        }
+      // ── Table ──────────────────────────────────────────────────────────────
+      case "table": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
 
-        // Build table columns from component config
+        // Determine effective data source:
+        // External mode: dataSourceButtonName is set and no dataUrl
+        const isExternalMode = !component.dataUrl && component.dataSourceButtonName;
+        const effectiveData = isExternalMode ? (externalData || []) : filteredTableData;
+        const effectiveLoading = isExternalMode ? false : tableLoading;
+
         const tableColumns = [];
 
-        // Adding action column if row actions are enabled
         if (
           component.rowActions?.showSelect ||
-          component.rowActions?.showDelete
+          component.rowActions?.showViewDetails
         ) {
           tableColumns.push({
             title: "Actions",
             key: "actions",
-            width: 120,
+            width: "120px",
             align: "center",
             render: (_, record) => (
               <Space size="small">
@@ -481,76 +486,147 @@ const ComponentRenderer = ({
                   <Button
                     type="primary"
                     size="small"
-                    onClick={() => {
-                      onRowAction(component, record);
-                    }}
-                    disabled={tableComponentState.isDisabled}
+                    onClick={() => onRowAction(component, record)}
+                    disabled={state.isDisabled}
+                    style={{ borderRadius: 6, fontWeight: 600 }}
                   >
                     {component.rowActions?.selectLabel || "Select"}
                   </Button>
                 )}
-                {component.rowActions?.showDelete && (
+                {component.rowActions?.showViewDetails && (
                   <Button
-                    danger
                     size="small"
-                    icon={<DeleteOutlined />}
-                    onClick={() => {
-                      messageApi.info("Delete functionality to be implemented");
+                    onClick={() => onViewDetails?.(component, record)}
+                    disabled={state.isDisabled}
+                    style={{
+                      borderRadius: 6,
+                      fontWeight: 600,
+                      background: "rgb(26 98 115)",
+                      borderColor: "rgb(41 102 149)",
+                      color: "#fff",
                     }}
-                    disabled={tableComponentState.isDisabled}
-                  />
+                  >
+                    {component.rowActions?.viewDetailsLabel || "Details"}
+                  </Button>
                 )}
               </Space>
             ),
           });
         }
+
         tableColumns.push(
           ...(component.columns || []).map((col) => ({
             title: col.label,
             dataIndex: col.dataIndex,
             key: col.dataIndex,
             width: 150,
+            ellipsis: true,
+            align: "center",
           })),
         );
 
         return (
-          <div className="w-full">
-            {component.label && (
-              <label className="text-sm font-semibold text-slate-700 block mb-3 px-2 flex items-center gap-2">
-                {component.label}
-                {tableComponentState.isDisabled && (
-                  <LockOutlined className="text-xs text-orange-500" title="Read-only" />
+          <div style={{ gridColumn: "1 / -1", padding: "0 8px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                marginBottom: 12,
+              }}
+            >
+              <div>
+                {component.label && (
+                  <div style={{ ...labelStyle, marginBottom: 0 }}>
+                    <span style={labelText}>{component.label}</span>
+                    {state.isDisabled && (
+                      <LockOutlined
+                        style={{ fontSize: 11, color: "#f59e0b" }}
+                      />
+                    )}
+                  </div>
                 )}
-              </label>
-            )}
-            <Table
+              </div>
+              <div>
+                {component.enableSearch !== false && (
+                  <Input.Search
+                    placeholder="Search table records..."
+                    allowClear
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    style={{ width: 260 }}
+                  />
+                )}
+              </div>
+            </div>
+            {/* <Table
               columns={tableColumns}
-              dataSource={tableData}
+              dataSource={filteredTableData}
               loading={tableLoading}
               pagination={
-                  component.pagination !== false
-                    ? {
-                        pageSize: pageSize,
-                        showSizeChanger: true,
-                        pageSizeOptions: ["5", "10", "20", "50", "100"],
-                        showTotal: (total) => `Total ${total} records`,
-                        onChange: (page, size) => setPageSize(size),
-                        onShowSizeChange: (current, size) => setPageSize(size),
-                      }
-                    : false
-                }
+                component.pagination !== false
+                  ? {
+                      pageSize,
+                      showSizeChanger: true,
+                      pageSizeOptions: ["5", "10", "20", "50", "100"],
+                      showTotal: (total) => `Total ${total} records`,
+                      onChange: (_, size) => setPageSize(size),
+                      onShowSizeChange: (_, size) => setPageSize(size),
+                    }
+                  : false
+              }
               rowKey={(record) => record.id || Math.random()}
               size="small"
               scroll={{ x: true }}
-              className="rounded-lg border border-slate-200 shadow-sm"
-              style={{ width: "100%", padding: "10px" }}
-              expandable={{
-                expandedRowRender: undefined,
-                showExpandColumn: false,
+              expandable={{ showExpandColumn: false }}
+              style={{
+                borderRadius: 10,
+                border: "1px solid #e8edf2",
+                overflow: "hidden",
+                boxShadow: "0 1px 4px rgba(15,23,42,0.04)",
               }}
+              className="rbs-table"
+            /> */}
+            <CustomTable
+              dataSource={effectiveData}
+              columns={tableColumns}
+              rowKey="id"
+              loading={effectiveLoading}
+              showExport={true}
+              onExport={(data) => {
+                console.log("Exporting data:", data);
+              }}
+              onRowClick={(record) => {
+                console.log("Row clicked:", record);
+              }}
+              stripedRows={true}
+              showRowHoverEffect={true}
+              highlightFirstColumn={true}
+              // Animation props
+              rowAnimation="zoom"
+              animationDuration={0.3}
+              staggerChildren={0.05}
             />
           </div>
         );
+      }
+
+      // ── Checkbox (single or group) ──────────────────────────────────────
+      case "checkbox": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
+        return (
+          <FieldWrap gridColumn={gc}>
+            <CheckboxComponent
+              component={component}
+              value={value}
+              onValueChange={onValueChange}
+              disabled={disabled}
+              state={state}
+            />
+          </FieldWrap>
+        );
+      }
 
       default:
         return null;
@@ -564,5 +640,45 @@ const ComponentRenderer = ({
     </>
   );
 };
+
+// ── Shared style tokens ────────────────────────────────────────────────────────
+
+const labelStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 5,
+  marginBottom: 5,
+};
+
+const labelText = {
+  fontSize: 12.5,
+  fontWeight: 600,
+  color: "#475569",
+  letterSpacing: "0.01em",
+  lineHeight: 1,
+};
+
+const requiredDot = {
+  color: "#ef4444",
+  flexShrink: 0,
+  fontSize: 13,
+  lineHeight: 1,
+};
+
+const fieldGroup = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 0,
+  paddingBottom: 4,
+};
+
+const inputStyle = (isDisabled) => ({
+  borderRadius: 8,
+  fontSize: 13.5,
+  height: 36,
+  background: isDisabled ? "#f8fafc" : "#fff",
+  borderColor: "#e2e8f0",
+  transition: "border-color 0.2s, box-shadow 0.2s",
+});
 
 export default ComponentRenderer;

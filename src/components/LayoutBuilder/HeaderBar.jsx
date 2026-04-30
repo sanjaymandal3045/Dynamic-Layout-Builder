@@ -52,7 +52,6 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
       const params = {
         subChannelId: "2",
         subServiceId: "8",
-        traceNo: "123",
         attributes: config,
       };
 
@@ -60,7 +59,7 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
 
       if (response.success === true) {
         messageApi.success(
-          response.message || "Configuration saved successfully"
+          response.message || "Configuration saved successfully",
         );
       } else {
         messageApi.error(response.message || "Configuration not saved");
@@ -167,7 +166,7 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
               <Tooltip
                 title={
                   !isFormValid
-                    ? "Please fill in all mandatory fields (Page Key and Display Title)"
+                    ? "Please fill in all mandatory fields"
                     : "Save Configuration"
                 }
               >

@@ -1,40 +1,46 @@
 import React, { useState, useEffect } from "react";
-import { Spin, Empty, message } from "antd";
 import LayoutPreview from "./LayoutBuilder/LayoutPreview";
-import { PAGE_REGISTRY } from "../config/pageRegistry";
-import cbsReportJson from "./../config/pages/cbs-report.json";
 import { useApi } from "../utilities/axiosApiCall";
 import SplashScreen from "./UI/SplashScreen";
+import ErrorScreen from "./UI/ErrorScreen";
 
 const DynamicPageLoader = ({ pageKey }) => {
-  const [config, setConfig] = useState({});
+  const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [formValues, setFormValues] = useState({});
+  const [retryCount, setRetryCount] = useState(0);
   const fetchPageConfigApi = useApi();
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchPageConfig = async () => {
       setLoading(true);
+      setError(null);
+
       try {
         const menuParams = {
           subChannelId: "2",
           subServiceId: "9",
-          traceNo: "",
           attributes: {
             pageKey: pageKey,
           },
         };
+
         const res = await fetchPageConfigApi.post(
           `/transaction/execute`,
           menuParams,
         );
+
+        if (cancelled) return;
 
         if (res?.data) {
           const rawConfig = res.data.attributes.pageConfig;
 
           let finalSections = rawConfig?.sections || [];
           if (
-            typeof rawConfig.sections === "string" &&
+            typeof rawConfig?.sections === "string" &&
             finalSections.length === 0
           ) {
             finalSections = JSON.parse(rawConfig.sections);
@@ -47,38 +53,92 @@ const DynamicPageLoader = ({ pageKey }) => {
 
           setFormValues({});
         } else {
-          message.error("Invalid configuration format received");
+          setError("Invalid configuration format received from server.");
           setConfig(null);
         }
-      } catch (error) {
-        console.error("Fetch Error:", error);
-        message.error("Failed to load page configuration");
+      } catch (err) {
+        if (cancelled) return;
+        console.error("Fetch Error:", err);
+        setError(
+          err?.message ||
+            "Failed to load page configuration. Please check your connection and try again.",
+        );
         setConfig(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchPageConfig();
-  }, [pageKey]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pageKey, retryCount]);
 
   const handleValueChange = (name, value) => {
     setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleRetry = () => setRetryCount((c) => c + 1);
+
+  // ── Loading State ────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        {/* <Spin size="large" /> */}
-        <SplashScreen tip="Loading page configuration..." />
+      <div
+        style={{
+          position: "relative",
+          minHeight: "420px",
+          height: "100%",
+          width: "100%",
+        }}
+      >
+        <SplashScreen tip="Loading screen configuration..." />
       </div>
     );
   }
 
-  if (!config) {
-    return <Empty style={{marginTop:"100px"}} description="Page Configuration not found" />;
+  // ── Error State ──────────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          minHeight: "420px",
+          height: "100%",
+          width: "100%",
+        }}
+      >
+        <ErrorScreen
+          title="Configuration Failed"
+          message={error}
+          onRetry={handleRetry}
+        />
+      </div>
+    );
   }
 
+  // ── Empty Config ─────────────────────────────────────────────────────────────
+  if (!config || !config.tabs) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          minHeight: "420px",
+          height: "100%",
+          width: "100%",
+        }}
+      >
+        <ErrorScreen
+          title="No Configuration"
+          message="No screen configuration was found for this page."
+          onRetry={handleRetry}
+        />
+      </div>
+    );
+  }
+
+  // ── Success: render dynamic page ─────────────────────────────────────────────
   return (
     <LayoutPreview
       config={config}

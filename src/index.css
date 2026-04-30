@@ -32,8 +32,70 @@ body {
   }
 }
 
-
 .ant-spin-text {
   padding-top: 40px !important; /* Adjust this value for more/less gap */
   color: #0d9488;
+}
+
+html,
+body {
+  overflow-x: hidden; /* Hide horizontal scrollbar */
+  max-width: 100vw; /* Prevent viewport overflow */
+}
+
+/* html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+} */
+
+body {
+  overflow-y: scroll;
+}
+
+.modern-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.modern-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modern-sidebar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+.modern-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+.modern-menu .ant-menu-item {
+  border-radius: 6px;
+  margin: 2px 8px;
+  transition: all 0.2s ease;
+}
+.modern-menu .ant-menu-item:hover {
+  background-color: #f3f4f6;
+}
+.modern-menu .ant-menu-item-selected {
+  background-color: #eff6ff !important;
+  color: #2563eb;
+  font-weight: 500;
+}
+.modern-menu .ant-menu-submenu-title {
+  border-radius: 6px;
+  margin: 2px 8px;
+  transition: all 0.2s ease;
+}
+.modern-menu .ant-menu-submenu-title:hover {
+  background-color: #f3f4f6;
+}
+
+/* Ensure content wrapper maintains height during transitions */
+.content-wrapper {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }

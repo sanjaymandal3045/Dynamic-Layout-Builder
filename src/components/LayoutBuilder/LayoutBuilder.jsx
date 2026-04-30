@@ -18,6 +18,7 @@ import {
   addComponent,
   removeComponent,
   moveComponent,
+  moveSection,
   saveComponentConfig,
   setConfig,
 } from "../../redux/slices/layoutSlice";
@@ -122,6 +123,10 @@ const LayoutBuilder = () => {
     dispatch(moveComponent({ tabId, sectionId, componentId, direction }));
   };
 
+  const handleMoveSection = (tabId, sectionId, direction) => {
+    dispatch(moveSection({ tabId, sectionId, direction }));
+  };
+
   const handleUpdateConfig = (newConfig) => {
     dispatch(setConfig(newConfig));
   };
@@ -170,6 +175,9 @@ const LayoutBuilder = () => {
                   }
                   onRemoveSection={(sectionId) =>
                     handleRemoveSection(tab.id, sectionId)
+                  }
+                  onMoveSection={(sectionId, direction) =>
+                    handleMoveSection(tab.id, sectionId, direction)
                   }
                   onAddComponent={(sectionId, component) =>
                     handleAddComponent(tab.id, sectionId, component)

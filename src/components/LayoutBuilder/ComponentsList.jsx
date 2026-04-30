@@ -9,11 +9,12 @@ import {
   SendOutlined,
   EnterOutlined,
   TableOutlined,
+  CheckSquareOutlined,
 } from "@ant-design/icons";
 import { COMPONENT_TYPES } from "../../utilities/constants";
 import ComponentItem from "./ComponentItem";
 import { MenuIcon } from "lucide-react";
-import { v7 as uuidv7 } from 'uuid';
+import { v7 as uuidv7 } from "uuid";
 
 const TYPE_ICONS = {
   field: <FormOutlined />,
@@ -24,6 +25,7 @@ const TYPE_ICONS = {
   newline: <EnterOutlined />,
   select: <MenuIcon />,
   table: <TableOutlined />,
+  checkbox: <CheckSquareOutlined />,
 };
 
 const ComponentsList = ({
@@ -59,7 +61,7 @@ const ComponentsList = ({
       button: {
         id,
         type,
-        name: `button_${id}`,  // ← Auto-generated button name
+        name: `button_${id}`, // ← Auto-generated button name
         label: "Button",
         variant: "primary",
         onClick: "submit",
@@ -70,7 +72,6 @@ const ComponentsList = ({
         apiCommon: {
           subChannelId: null,
           subServiceId: null,
-          traceNo: "",
         },
         controlString: "111",
       },
@@ -96,7 +97,7 @@ const ComponentsList = ({
       table: {
         id,
         type,
-        name: `table_${id}`,  // ← Auto-generated table name
+        name: `table_${id}`, // ← Auto-generated table name
         label: "Data Table",
         dataUrl: "",
         pagination: true,
@@ -118,7 +119,6 @@ const ComponentsList = ({
         rowActions: {
           showSelect: true,
           selectLabel: "Select",
-          showDelete: false,
         },
         tableApi: {
           method: "get",
@@ -127,9 +127,20 @@ const ComponentsList = ({
         tableApiCommon: {
           subChannelId: null,
           subServiceId: null,
-          traceNo: "",
         },
-        triggerButtonName: [],  // ← New: Store button names that trigger this table
+        triggerButtonName: [], // ← New: Store button names that trigger this table
+      },
+      checkbox: {
+        id,
+        type,
+        name: `checkbox_${id}`,
+        label: "Checkbox",
+        checkboxMode: "single",     // "single" | "multiple"
+        checkedValue: "Y",
+        uncheckedValue: "N",
+        options: [],               // used in multiple mode
+        required: false,
+        controlString: "111",
       },
     };
 

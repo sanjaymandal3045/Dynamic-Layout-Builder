@@ -1,16 +1,20 @@
-import { Card, Input, InputNumber, Button } from "antd";
+import { Card, Input, InputNumber, Button, Tooltip } from "antd";
 import {
   DeleteOutlined,
   LayoutOutlined,
   AppstoreOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
 } from "@ant-design/icons";
 import ComponentsList from "./ComponentsList";
 
 const SectionCard = ({
   section,
-  tabId,
+  index,
+  total,
   onUpdateSection,
   onRemoveSection,
+  onMoveSection,
   onAddComponent,
   onRemoveComponent,
   onMoveComponent,
@@ -52,13 +56,35 @@ const SectionCard = ({
               />
             </div>
 
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={onRemoveSection}
-              className="hover:bg-red-50 rounded-full w-10 h-10 flex items-center justify-center"
-            />
+            <div className="flex items-center gap-1">
+              <Tooltip title="Move Up">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<ArrowUpOutlined />}
+                  disabled={index === 0}
+                  onClick={() => onMoveSection("up")}
+                  className="hover:bg-indigo-50 rounded-lg w-8 h-8 flex items-center justify-center"
+                />
+              </Tooltip>
+              <Tooltip title="Move Down">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<ArrowDownOutlined />}
+                  disabled={index === total - 1}
+                  onClick={() => onMoveSection("down")}
+                  className="hover:bg-indigo-50 rounded-lg w-8 h-8 flex items-center justify-center"
+                />
+              </Tooltip>
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={onRemoveSection}
+                className="hover:bg-red-50 rounded-full w-10 h-10 flex items-center justify-center"
+              />
+            </div>
           </div>
 
           {/* Layout Configuration Section */}

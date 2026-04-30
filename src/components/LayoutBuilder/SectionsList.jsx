@@ -7,6 +7,7 @@ const SectionsList = ({
   onAddSection,
   onUpdateSection,
   onRemoveSection,
+  onMoveSection,
   onAddComponent,
   onRemoveComponent,
   onMoveComponent,
@@ -29,15 +30,18 @@ const SectionsList = ({
       </div>
 
       {Array.isArray(sections) &&
-        sections.map((section) => (
+        sections.map((section, index) => (
           <SectionCard
             key={section.id}
             section={section}
             tabId={tabId}
+            index={index}
+            total={sections.length}
             onUpdateSection={(patch) =>
               onUpdateSection(section.id, patch)
             }
             onRemoveSection={() => onRemoveSection(section.id)}
+            onMoveSection={(direction) => onMoveSection(section.id, direction)}
             onAddComponent={(component) =>
               onAddComponent(section.id, component)
             }
