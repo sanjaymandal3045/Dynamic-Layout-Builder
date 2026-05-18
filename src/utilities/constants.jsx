@@ -148,6 +148,7 @@ export const COMPONENT_TYPES = {
   SELECT: "select",
   TABLE: "table",
   CHECKBOX: "checkbox",
+  UPLOAD: "upload",
 };
 
 export const FIELD_TYPES = [

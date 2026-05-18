@@ -2,9 +2,8 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import axios from "axios";
 import { message } from "antd";
 
-// Create a dedicated axios instance for this hook
 const apiClient = axios.create({
-  baseURL: "http://172.16.218.122:8080/api/v1/",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 20000,
 });
 

@@ -186,7 +186,8 @@ const LayoutPreview = ({
         (comp) =>
           comp.type === "field" ||
           comp.type === "select" ||
-          comp.type === "checkbox",
+          comp.type === "checkbox" ||
+          comp.type === "upload",
       )
       .map((comp) => comp.name);
 
@@ -214,6 +215,7 @@ const LayoutPreview = ({
     ) {
       const payload = {};
       let hasMissingRequired = false;
+      let validationErrorMsg = null;
 
       sectionFieldNames.forEach((name) => {
         const component = section.components.find((c) => c.name === name);
@@ -222,7 +224,10 @@ const LayoutPreview = ({
         // Checkboxes that have never been interacted with will have
         // val === undefined. JSON.stringify silently drops undefined keys,
         // so we must substitute the configured default before building the payload.
-        if (component?.type === "checkbox" && (val === undefined || val === null)) {
+        if (
+          component?.type === "checkbox" &&
+          (val === undefined || val === null)
+        ) {
           val =
             component.checkboxMode === "multiple"
               ? []
@@ -235,11 +240,54 @@ const LayoutPreview = ({
         ) {
           hasMissingRequired = true;
         }
+
+        // Validate number limits
+        if (
+          component?.type === "field" &&
+          component?.fieldType === "number" &&
+          val !== undefined &&
+          val !== null &&
+          val !== ""
+        ) {
+          const numVal = Number(val);
+          if (!isNaN(numVal)) {
+            let effectiveMin = component.min;
+            if (component.onlyPositive) {
+              effectiveMin = Math.max(component.min || 0, 0);
+            }
+
+            if (
+              effectiveMin !== undefined &&
+              effectiveMin !== null &&
+              numVal < effectiveMin
+            ) {
+              if (!validationErrorMsg) {
+                validationErrorMsg = `${component.label || name} cannot be less than ${effectiveMin}.`;
+              }
+            }
+
+            if (
+              component.max !== undefined &&
+              component.max !== null &&
+              numVal > component.max
+            ) {
+              if (!validationErrorMsg) {
+                validationErrorMsg = `${component.label || name} cannot be greater than ${component.max}.`;
+              }
+            }
+          }
+        }
+
         payload[name] = val;
       });
 
       if (!buttonComponent.skipValidation && hasMissingRequired) {
         messageApi.error("Please fill in all required fields in this section.");
+        return;
+      }
+
+      if (!buttonComponent.skipValidation && validationErrorMsg) {
+        messageApi.error(validationErrorMsg);
         return;
       }
 
@@ -751,13 +799,28 @@ const LayoutPreview = ({
         {/* Tab container */}
 
         <div style={tabContainer}>
-          <Tabs
-            items={tabItems}
-            type="line"
-            className="lp-tabs"
-            disabled={isSubmitting}
-            tabBarStyle={{ marginBottom: 0 }}
-          />
+          {config.tabs.length === 1 && (!config.tabs[0].title || config.tabs[0].title.trim() === "") ? (
+            <div style={{ padding: "16px 20px 20px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                  padding: "4px 2px",
+                }}
+              >
+                {config.tabs[0].sections.map(renderSection)}
+              </div>
+            </div>
+          ) : (
+            <Tabs
+              items={tabItems}
+              type="line"
+              className="lp-tabs"
+              disabled={isSubmitting}
+              tabBarStyle={{ marginBottom: 0 }}
+            />
+          )}
         </div>
       </div>
     </>
@@ -770,7 +833,6 @@ const pageWrap = {
   display: "flex",
   flexDirection: "column",
   gap: "16px",
-  padding: "20px",
   minHeight: "100%",
 };
 

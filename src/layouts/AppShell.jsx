@@ -259,7 +259,7 @@ const AppShell = ({
                 exit="exit"
                 transition={{ duration: 0.35, ease: "easeInOut" }}
                 style={{
-                  padding: 4,
+                  // padding: 4,
                   marginTop: 10,
                   background: "#fff",
                   borderRadius: 8,

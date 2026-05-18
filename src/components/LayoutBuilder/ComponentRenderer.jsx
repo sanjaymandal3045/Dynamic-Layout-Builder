@@ -10,8 +10,9 @@ import {
   Space,
   message,
   Tooltip,
+  Upload,
 } from "antd";
-import { DeleteOutlined, LockOutlined } from "@ant-design/icons";
+import { DeleteOutlined, LockOutlined, InboxOutlined } from "@ant-design/icons";
 import { useApi } from "../../utilities/axiosApiCall";
 import CustomTable from "../UI/CustomTable";
 import FilterSearchPanel from "../UI/FilterSearchPanel";
@@ -39,6 +40,8 @@ const FieldWrap = ({ gridColumn, children }) => (
   <div style={{ gridColumn, padding: "0 8px" }}>{children}</div>
 );
 
+const uploadNameCache = new Map();
+
 const ComponentRenderer = ({
   component,
   value,
@@ -58,6 +61,7 @@ const ComponentRenderer = ({
   const [messageApi, contextHolder] = message.useMessage();
   const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState("");
+  const [fieldError, setFieldError] = useState("");
 
   const filteredTableData = useMemo(() => {
     if (!searchText) return tableData;
@@ -172,7 +176,8 @@ const ComponentRenderer = ({
     if (
       component.type === "divider" ||
       component.type === "newline" ||
-      component.type === "table"
+      component.type === "table" ||
+      component.type === "upload"
     )
       return "1 / -1";
     if (offset > 0) return `${offset + 1} / span ${colSpan}`;
@@ -263,12 +268,87 @@ const ComponentRenderer = ({
                 type={component.fieldType}
                 placeholder={component.placeholder}
                 value={value || ""}
-                onChange={(e) => onValueChange(component.name, e.target.value)}
-                onBlur={handleFieldBlur}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  setFieldError(""); // Clear error on change by default
+
+                  if (component.fieldType === "number") {
+                    if (component.onlyPositive && val.includes("-")) {
+                      return; // Block negative signs completely
+                    }
+                    if (val !== "") {
+                      const numVal = Number(val);
+                      if (
+                        component.max !== undefined &&
+                        component.max !== null &&
+                        numVal > component.max
+                      ) {
+                        setFieldError(
+                          `Maximum allowed value is ${component.max}`,
+                        );
+                        return; // Block input greater than max
+                      }
+
+                      const effectiveMin = component.onlyPositive
+                        ? Math.max(component.min || 0, 0)
+                        : component.min;
+                      if (
+                        effectiveMin !== undefined &&
+                        effectiveMin !== null &&
+                        numVal < effectiveMin
+                      ) {
+                        // We do not block intermediate typing, but we can set the error
+                        // so it shows up if they stop typing.
+                        // It will be definitely evaluated on blur as well.
+                      }
+                    }
+                  }
+                  onValueChange(component.name, val);
+                }}
+                onBlur={(e) => {
+                  let val = e.target.value;
+                  if (component.fieldType === "number" && val !== "") {
+                    const numVal = Number(val);
+                    const effectiveMin = component.onlyPositive
+                      ? Math.max(component.min || 0, 0)
+                      : component.min;
+
+                    if (
+                      effectiveMin !== undefined &&
+                      effectiveMin !== null &&
+                      numVal < effectiveMin
+                    ) {
+                      setFieldError(`Minimum allowed value is ${effectiveMin}`);
+                      // Removed auto-correct to allow user to fix it themselves based on the error message
+                    }
+                  }
+                  handleFieldBlur();
+                }}
                 disabled={isDisabled}
                 status={state.isDisabled ? "warning" : ""}
                 style={inputStyle(isDisabled)}
+                min={
+                  component.fieldType === "number"
+                    ? component.onlyPositive
+                      ? Math.max(component.min || 0, 0)
+                      : component.min
+                    : undefined
+                }
+                max={
+                  component.fieldType === "number" ? component.max : undefined
+                }
               />
+              {fieldError && (
+                <div
+                  style={{
+                    color: "#ef4444",
+                    fontSize: "12px",
+                    marginTop: "4px",
+                  }}
+                >
+                  {fieldError}
+                </div>
+              )}
             </div>
           </FieldWrap>
         );
@@ -465,8 +545,11 @@ const ComponentRenderer = ({
 
         // Determine effective data source:
         // External mode: dataSourceButtonName is set and no dataUrl
-        const isExternalMode = !component.dataUrl && component.dataSourceButtonName;
-        const effectiveData = isExternalMode ? (externalData || []) : filteredTableData;
+        const isExternalMode =
+          !component.dataUrl && component.dataSourceButtonName;
+        const effectiveData = isExternalMode
+          ? externalData || []
+          : filteredTableData;
         const effectiveLoading = isExternalMode ? false : tableLoading;
 
         const tableColumns = [];
@@ -625,6 +708,109 @@ const ComponentRenderer = ({
               state={state}
             />
           </FieldWrap>
+        );
+      }
+
+      // ── Upload ────────────────────────────────────────────────────────────
+      case "upload": {
+        const state = getComponentState(component);
+        if (!state.isVisible) return null;
+
+        const isDisabled = disabled || state.isDisabled;
+        const isMultiple = component.maxCount > 1;
+
+        const currentArray = Array.isArray(value)
+          ? value
+          : value
+            ? [value]
+            : [];
+
+        const handleCustomRequest = ({ file, onSuccess, onError }) => {
+          if (component.uploadFormat === "Base64") {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+              uploadNameCache.set(reader.result, file.name);
+              const nextArray = [...currentArray, reader.result];
+              onValueChange(
+                component.name,
+                isMultiple ? nextArray : reader.result,
+              );
+              onSuccess("ok");
+            };
+            reader.onerror = (error) => {
+              onError(error);
+            };
+          } else {
+            // Default BLOB format
+            const nextArray = [...currentArray, file];
+            onValueChange(component.name, isMultiple ? nextArray : file);
+            onSuccess("ok");
+          }
+        };
+
+        const handleRemove = (fileToRemove) => {
+          const valToRemove = fileToRemove.originValue;
+          const nextArray = currentArray.filter((v) => v !== valToRemove);
+          if (nextArray.length === 0) {
+            onValueChange(component.name, undefined);
+          } else {
+            onValueChange(
+              component.name,
+              isMultiple ? nextArray : nextArray[0],
+            );
+          }
+        };
+
+        const fileList = currentArray.map((v, idx) => ({
+          uid: `-${idx}`,
+          name:
+            v instanceof File
+              ? v.name
+              : uploadNameCache.get(v) || `uploaded-file-${idx + 1}`,
+          status: "done",
+          originValue: v,
+        }));
+
+        const uploadProps = {
+          customRequest: handleCustomRequest,
+          maxCount: component.maxCount || 1,
+          multiple: isMultiple,
+          accept: component.accept || undefined,
+          disabled: isDisabled,
+          onRemove: handleRemove,
+          fileList: fileList,
+        };
+
+        return (
+          <div style={{ gridColumn: gc, padding: "0 8px" }}>
+            <div style={fieldGroup}>
+              <FieldLabel
+                label={component.label}
+                required={component.required}
+                locked={state.isDisabled}
+              />
+              <Upload.Dragger
+                {...uploadProps}
+                style={{
+                  width: "100%",
+                  background: isDisabled ? "#f8fafc" : undefined,
+                }}
+              >
+                <p className="ant-upload-drag-icon">
+                  <InboxOutlined
+                    style={{ color: "rgb(126 157 219)", fontWeight: "200" }}
+                  />
+                </p>
+                <p
+                  className="ant-upload-text"
+                  style={{ color: "rgb(52 115 241)", fontWeight: "400" }}
+                >
+                  Click or drag file to this area to upload
+                </p>
+              </Upload.Dragger>
+            </div>
+          </div>
         );
       }
 

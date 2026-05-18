@@ -1,14 +1,6 @@
 // GLOBAL IMPORT
 import React, { useState, useEffect } from "react";
-import {
-  Button,
-  Form,
-  Input,
-  Typography,
-  message,
-  Checkbox,
-  Spin,
-} from "antd";
+import { Button, Form, Input, Typography, message, Checkbox, Spin } from "antd";
 import {
   LockOutlined,
   UserOutlined,
@@ -32,11 +24,14 @@ const Login = () => {
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
+  const [connectionStatus, setConnectionStatus] = useState("checking");
+  const [connectionMessage, setConnectionMessage] = useState("");
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const api = useApi();
+  const connectionTestApi = useApi();
 
   useEffect(() => {
     setMounted(true);
@@ -46,14 +41,41 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  const checkConnection = async () => {
+    setConnectionStatus("checking");
+    try {
+      const response = await connectionTestApi.get("/admin/status");
+
+      if (response && response.success && response.data?.statusCode === 200) {
+        setConnectionStatus("connected");
+      } else {
+        setConnectionStatus("error");
+        const errorMsg = response?.message || "Server connection failed.";
+        setConnectionMessage(errorMsg);
+        // messageApi.error(errorMsg);
+      }
+    } catch (error) {
+      setConnectionStatus("error");
+      setConnectionMessage("Connection failed");
+      // useApi already handles generic error notification
+    }
+  };
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
   // --- REAL API LOGIN LOGIC ---
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
-      
+
       // Validate form fields
       const values = await form.validateFields();
-      console.log("Form values:", { employeeId: values.username, password: values.password });
+      console.log("Form values:", {
+        employeeId: values.username,
+        password: values.password,
+      });
 
       // Make API call to login endpoint using useApi hook
       const response = await api.post("auth/login", {
@@ -105,7 +127,7 @@ const Login = () => {
           refreshToken,
           roles,
           tokenType,
-        })
+        }),
       );
 
       messageApi.success("Login successful! Redirecting...");
@@ -173,7 +195,40 @@ const Login = () => {
 
         {/* Right Panel - Login Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 relative z-10">
-          <div className="w-full max-w-sm">
+          {/* Connection Status Indicator - Top Right */}
+          <div className="absolute top-6 right-6 flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 shadow-sm transition-all duration-300">
+            {connectionTestApi.loading ? (
+              <>
+                <Spin
+                  indicator={
+                    <LoadingOutlined
+                      style={{ fontSize: 14, color: "#64748b" }}
+                      spin
+                    />
+                  }
+                />
+                <Text className="text-xs text-slate-500 font-medium">
+                  Checking system...
+                </Text>
+              </>
+            ) : connectionStatus === "connected" ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                <Text className="text-xs text-emerald-600 font-semibold">
+                  System Online
+                </Text>
+              </>
+            ) : (
+              <>
+                <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,111,0.5)]"></div>
+                <Text className="text-xs text-rose-600 font-semibold">
+                  {connectionMessage || "System Offline"}
+                </Text>
+              </>
+            )}
+          </div>
+
+          <div className="w-full max-w-sm mt-8 lg:mt-0">
             {/* Mobile Logo & Title */}
             <div className="lg:hidden text-center mb-8">
               <div className="inline-flex items-center justify-center gap-2 mb-4">
@@ -227,7 +282,6 @@ const Login = () => {
                     placeholder="Enter your employee ID"
                     className="rounded-lg h-11 border-slate-300 focus:border-teal-500 focus:ring-teal-500 text-base"
                     onPressEnter={handleSubmit}
-                    disabled={isSubmitting}
                   />
                 </Form.Item>
 
@@ -247,16 +301,12 @@ const Login = () => {
                     placeholder="Enter your password"
                     className="rounded-lg h-11 border-slate-300 focus:border-teal-500 focus:ring-teal-500 text-base"
                     onPressEnter={handleSubmit}
-                    disabled={isSubmitting}
                   />
                 </Form.Item>
 
                 <div className="flex items-center justify-between mb-7">
                   <Form.Item name="remember" valuePropName="checked" noStyle>
-                    <Checkbox
-                      className="text-slate-600 text-sm font-medium"
-                      disabled={isSubmitting}
-                    >
+                    <Checkbox className="text-slate-600 text-sm font-medium">
                       Remember me
                     </Checkbox>
                   </Form.Item>
@@ -278,7 +328,11 @@ const Login = () => {
                     icon={!isSubmitting && <ArrowRightOutlined />}
                     className="rounded-lg font-semibold h-11 text-base bg-teal-600 border-none hover:bg-teal-700 hover:shadow-lg transition-all duration-200"
                     iconPosition="end"
-                    disabled={isSubmitting}
+                    disabled={
+                      isSubmitting ||
+                      connectionTestApi.loading ||
+                      connectionStatus === "error"
+                    }
                   >
                     {isSubmitting ? "Signing in..." : "Sign In"}
                   </Button>

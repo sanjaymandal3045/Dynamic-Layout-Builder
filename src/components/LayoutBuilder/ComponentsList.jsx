@@ -10,6 +10,7 @@ import {
   EnterOutlined,
   TableOutlined,
   CheckSquareOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { COMPONENT_TYPES } from "../../utilities/constants";
 import ComponentItem from "./ComponentItem";
@@ -26,6 +27,7 @@ const TYPE_ICONS = {
   select: <MenuIcon />,
   table: <TableOutlined />,
   checkbox: <CheckSquareOutlined />,
+  upload: <UploadOutlined />,
 };
 
 const ComponentsList = ({
@@ -139,6 +141,17 @@ const ComponentsList = ({
         checkedValue: "Y",
         uncheckedValue: "N",
         options: [],               // used in multiple mode
+        required: false,
+        controlString: "111",
+      },
+      upload: {
+        id,
+        type,
+        name: `upload_${id}`,
+        label: "File Upload",
+        uploadFormat: "BLOB", // "BLOB" or "Base64"
+        maxCount: 1,
+        accept: "",
         required: false,
         controlString: "111",
       },

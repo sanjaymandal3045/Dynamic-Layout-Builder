@@ -246,6 +246,38 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
               Mark as Required
             </Checkbox>
 
+            {formData.fieldType === "number" && (
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4 my-4">
+                <p className="text-xs text-slate-600 font-semibold">
+                  Number Validations
+                </p>
+                <div className="flex gap-4">
+                  <FormField label="Min Value">
+                    <InputNumber
+                      value={formData.min}
+                      onChange={(v) => updateField("min", v)}
+                      className="w-full"
+                      size="large"
+                    />
+                  </FormField>
+                  <FormField label="Max Value">
+                    <InputNumber
+                      value={formData.max}
+                      onChange={(v) => updateField("max", v)}
+                      className="w-full"
+                      size="large"
+                    />
+                  </FormField>
+                </div>
+                <Checkbox
+                  checked={formData.onlyPositive}
+                  onChange={(e) => updateField("onlyPositive", e.target.checked)}
+                >
+                  Only Positive Numbers
+                </Checkbox>
+              </div>
+            )}
+
             <Divider />
 
             {/* onBlur API toggle */}
@@ -839,6 +871,69 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                 </FormField>
               </div>
             )}
+          </>
+        )}
+        {/* ══════════════════════════════════ UPLOAD ══════════════════════════ */}
+        {component.type === "upload" && (
+          <>
+            <FormField label="Field Name (binding key)" required error={errors.name}>
+              <Input
+                status={errors.name ? "error" : ""}
+                value={formData.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="e.g. documentFile"
+                size="large"
+              />
+            </FormField>
+
+            <FormField label="Label">
+              <Input
+                value={formData.label}
+                onChange={(e) => updateField("label", e.target.value)}
+                placeholder="e.g. Upload Document"
+                size="large"
+              />
+            </FormField>
+
+            <FormField label="Upload Format">
+              <Select
+                value={formData.uploadFormat || "BLOB"}
+                onChange={(v) => updateField("uploadFormat", v)}
+                options={[
+                  { value: "BLOB", label: "BLOB (File object)" },
+                  { value: "Base64", label: "Base64 encoded string" },
+                ]}
+                size="large"
+                style={{ width: "100%" }}
+              />
+            </FormField>
+
+            <FormField label="Maximum Files">
+              <InputNumber
+                min={1}
+                max={10}
+                value={formData.maxCount || 1}
+                onChange={(v) => updateField("maxCount", v)}
+                size="large"
+                className="w-full"
+              />
+            </FormField>
+
+            <FormField label="Accepted File Types (optional)">
+              <Input
+                value={formData.accept || ""}
+                onChange={(e) => updateField("accept", e.target.value)}
+                placeholder="e.g. .pdf,.png,.jpeg"
+                size="large"
+              />
+            </FormField>
+
+            <Checkbox
+              checked={formData.required}
+              onChange={(e) => updateField("required", e.target.checked)}
+            >
+              Mark as Required
+            </Checkbox>
           </>
         )}
 
