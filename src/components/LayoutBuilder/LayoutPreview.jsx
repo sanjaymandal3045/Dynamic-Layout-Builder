@@ -80,6 +80,12 @@ const LayoutPreview = ({
       Object.entries(mappedValues).forEach(([fieldName, fieldValue]) => {
         onValueChange(fieldName, fieldValue);
       });
+      
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+        document.body.scrollTo({ top: 0, behavior: "smooth" });
+      }, 100);
     }
   };
 
@@ -158,11 +164,24 @@ const LayoutPreview = ({
             config: ra.viewDetailsConfig,
             formValues: detailFormValues,
           });
+          
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+            document.body.scrollTo({ top: 0, behavior: "smooth" });
+          }, 100);
         } else {
           // Fallback: populate fields in-place (original behavior)
           Object.entries(resolvedValues).forEach(([k, v]) =>
             onValueChange(k, v),
           );
+          
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+            document.body.scrollTo({ top: 0, behavior: "smooth" });
+          }, 100);
+          
           if (populated > 0) {
             messageApi.success(
               `${populated} field${populated > 1 ? "s" : ""} populated from details.`,
@@ -516,13 +535,13 @@ const LayoutPreview = ({
               // marginBottom: 18,
               padding: "7px 16px",
               borderRadius: 8,
-              border: "1.5px solid #e2e8f0",
-              background: "#fff",
-              color: "#475569",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-card)",
+              color: "var(--text-secondary)",
               fontWeight: 600,
               fontSize: 13,
               cursor: "pointer",
-              boxShadow: "0 1px 4px rgba(15,23,42,0.07)",
+              boxShadow: "var(--shadow-sm)",
             }}
           >
             <ArrowLeft size={14} /> Back
@@ -559,7 +578,7 @@ const LayoutPreview = ({
           flexDirection: "column",
           gap: `${section.layout.gutter ?? 12}px`,
           padding: "12px 10px 12px 10px",
-          backgroundColor: "#f7fbff",
+          backgroundColor: "var(--bg-app)",
         }}
       >
         {section.components.map((c, index) => {
@@ -731,7 +750,7 @@ const LayoutPreview = ({
       {/* Scoped CSS for smooth Ant Design tab bar */}
       <style>{`
         .lp-page-header { padding: 20px 24px 0; }
-        .lp-tabs .ant-tabs-nav { padding: 0 24px; background: #cae6ff30; }
+        .lp-tabs .ant-tabs-nav { padding: 0 24px; background: var(--bg-hover); }
         .lp-tabs .ant-tabs-tab { font-weight: 500; font-size: 13.5px; padding: 12px 4px; }
         .lp-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { color: #0d9488 !important; }
         .lp-tabs .ant-tabs-ink-bar { background: #0d9488; border-radius: 2px; }
@@ -779,11 +798,11 @@ const LayoutPreview = ({
                     key={idx}
                     className="rounded-2xl p-[2px] bg-gradient-to-br from-green-200 via-cyan-500 to-blue-500 shadow-sm hover:shadow-md transition-all duration-300"
                   >
-                    <div className="rounded-[14px] bg-white p-3 h-full flex flex-col justify-center">
-                      <div className="text-[10px] font-bold text-slate-500 tracking-wide uppercase">
+                    <div className="rounded-[14px] p-3 h-full flex flex-col justify-center" style={{ background: "var(--bg-card)" }}>
+                      <div className="text-[10px] font-bold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
                         {card.label}
                       </div>
-                      <div className="text-[15px] font-bold text-slate-800 mt-[2px] truncate">
+                      <div className="text-[15px] font-bold mt-[2px] truncate" style={{ color: "var(--text-primary)" }}>
                         {val !== undefined && val !== null && val !== ""
                           ? String(val)
                           : "-"}
@@ -799,8 +818,9 @@ const LayoutPreview = ({
         {/* Tab container */}
 
         <div style={tabContainer}>
-          {config.tabs.length === 1 && (!config.tabs[0].title || config.tabs[0].title.trim() === "") ? (
-            <div style={{ padding: "16px 20px 20px" }}>
+          {config.tabs.length === 1 &&
+          (!config.tabs[0].title || config.tabs[0].title.trim() === "") ? (
+            <div style={{ padding: "10px 10px 0px" }}>
               <div
                 style={{
                   display: "flex",
@@ -841,8 +861,9 @@ const backBtn = {
   height: 36,
   paddingInline: 16,
   borderRadius: 8,
-  borderColor: "#e2e8f0",
-  color: "#64748b",
+  borderColor: "var(--border-color)",
+  background: "var(--bg-card)",
+  color: "var(--text-secondary)",
   fontWeight: 500,
 };
 
@@ -854,33 +875,32 @@ const pageTitleStyle = {
   margin: 0,
   fontSize: "22px",
   fontWeight: 800,
-  color: "#0f172a",
+  color: "var(--text-primary)",
   letterSpacing: "-0.02em",
 };
 
 const pageDescStyle = {
   margin: "6px 0 0",
   fontSize: "14px",
-  color: "#64748b",
+  color: "var(--text-muted)",
   lineHeight: 1.6,
 };
 
 const tabContainer = {
-  background: "#fff",
+  background: "var(--bg-card)",
   borderRadius: "14px",
-  border: "1px solid #e8edf2",
-  boxShadow: "0 2px 12px rgba(15, 23, 42, 0.06)",
+  border: "1px solid var(--border-color)",
+  boxShadow: "var(--shadow-md)",
   overflow: "hidden",
 };
 
 // Section
 const sectionCard = {
-  background: "#fff",
+  background: "var(--bg-card)",
   borderRadius: "12px",
-  border: "1px solid #eef0f6",
-  boxShadow: "0 1px 6px rgba(15, 23, 42, 0.05)",
+  border: "1px solid var(--border-color)",
+  boxShadow: "var(--shadow-sm)",
   overflow: "hidden",
-  // padding: "0 0 18px",
 };
 
 const sectionHeaderBar = {
@@ -888,10 +908,8 @@ const sectionHeaderBar = {
   alignItems: "center",
   gap: "10px",
   padding: "14px 18px",
-  borderBottom: "1px solid #f1f5f9",
-  background:
-    "linear-gradient(90deg, rgb(241, 241, 241) 0%, rgb(216 227 249) 75%)",
-  // marginBottom: "12px",
+  borderBottom: "1px solid var(--border-color)",
+  background: "var(--section-header-bg)",
 };
 
 const sectionAccent = {
@@ -906,7 +924,7 @@ const sectionTitle = {
   margin: 0,
   fontSize: "13.5px",
   fontWeight: 700,
-  color: "#1e293b",
+  color: "var(--text-primary)",
   letterSpacing: "0.01em",
   flex: 1,
 };

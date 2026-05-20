@@ -120,7 +120,7 @@ const FilterSearchPanel = ({
       <div style={panelHeader}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={iconBadge}>
-            <FilterOutlined style={{ fontSize: 14, color: T.icon }} />
+            <FilterOutlined style={{ fontSize: 14, color: "var(--accent-gradient-end)" }} />
           </div>
           <div>
             <p style={headerTitle}>Search Filters</p>
@@ -248,17 +248,17 @@ const FilterSearchPanel = ({
 
 const panelWrap = {
   width: "100%",
-  background: "linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)",
-  border: "1.5px solid #c7d2fe",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border-color)",
   borderRadius: 14,
   overflow: "hidden",
-  boxShadow: "0 2px 16px rgba(99,102,241,0.08)",
+  boxShadow: "var(--shadow-sm)",
 };
 
 const panelHeader = {
   padding: "14px 20px 12px",
-  borderBottom: "1px solid #e0e7ff",
-  background: "linear-gradient(90deg, #eef2ff 0%, #f5f3ff 100%)",
+  borderBottom: "1px solid var(--border-color)",
+  background: "var(--section-header-bg)",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -270,7 +270,7 @@ const iconBadge = {
   width: 34,
   height: 34,
   borderRadius: 9,
-  background: "#e0e7ff",
+  background: "var(--bg-hover)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -281,14 +281,14 @@ const headerTitle = {
   margin: 0,
   fontSize: 13.5,
   fontWeight: 700,
-  color: "#3730a3",
+  color: "var(--text-primary)",
   lineHeight: 1.2,
 };
 
 const headerSub = {
   margin: 0,
   fontSize: 11,
-  color: "#6366f1",
+  color: "var(--text-muted)",
   lineHeight: 1.4,
   marginTop: 2,
 };
@@ -307,17 +307,19 @@ const filterRow = {
   alignItems: "center",
   gap: 8,
   padding: "10px 14px",
-  background: "#fff",
+  background: "var(--bg-card)",
   borderRadius: 10,
-  border: "1px solid #e8ecff",
-  boxShadow: "0 1px 4px rgba(99,102,241,0.06)",
+  border: "1px solid var(--border-color)",
+  boxShadow: "var(--shadow-sm)",
   transition: "border-color 0.2s, box-shadow 0.2s",
 };
 
 const valueInput = {
   flex: 1,
   borderRadius: 8,
-  borderColor: "#e0e7ff",
+  borderColor: "var(--border-color)",
+  background: "var(--bg-card)",
+  color: "var(--text-primary)",
   fontSize: 13,
   height: 34,
 };
@@ -327,32 +329,34 @@ const actionRow = {
   alignItems: "center",
   justifyContent: "space-between",
   padding: "10px 20px 14px",
-  borderTop: "1px solid #e0e7ff",
-  background: "#fafbff",
+  borderTop: "1px solid var(--border-color)",
+  background: "var(--section-header-bg)",
 };
 
 const addBtn = {
-  borderColor: "#a5b4fc",
-  color: "#4f46e5",
+  borderColor: "var(--border-color)",
+  background: "var(--bg-card)",
+  color: "var(--text-secondary)",
   borderRadius: 8,
   fontSize: 12,
   fontWeight: 500,
 };
 
 const resetBtn = {
-  borderColor: "#e2e8f0",
-  color: "#64748b",
+  borderColor: "var(--border-color)",
+  background: "var(--bg-card)",
+  color: "var(--text-secondary)",
   borderRadius: 8,
   fontSize: 12,
 };
 
 const searchBtn = {
-  background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+  background: "linear-gradient(135deg, #0d9488, #0f858dff)",
   borderColor: "transparent",
   borderRadius: 8,
   fontWeight: 600,
   fontSize: 12,
-  boxShadow: "0 2px 8px rgba(99,102,241,0.35)",
+  boxShadow: "0 2px 8px rgba(13,148,136,0.35)",
   color: "white",
 };
 

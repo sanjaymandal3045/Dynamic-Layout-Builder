@@ -147,7 +147,7 @@ const Login = () => {
   return (
     <>
       {contextHolder}
-      <div className="min-h-screen flex bg-white">
+      <div className="min-h-screen flex" style={{ background: "var(--bg-app)", transition: "background-color 0.3s ease" }}>
         {/* Left Panel - Branding */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-b from-slate-900 to-slate-800 relative">
           {/* Subtle divider line */}
@@ -196,7 +196,14 @@ const Login = () => {
         {/* Right Panel - Login Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 relative z-10">
           {/* Connection Status Indicator - Top Right */}
-          <div className="absolute top-6 right-6 flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 shadow-sm transition-all duration-300">
+          <div
+            className="absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-all duration-300"
+            style={{
+              background: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+              color: "var(--text-primary)",
+            }}
+          >
             {connectionTestApi.loading ? (
               <>
                 <Spin
@@ -207,7 +214,7 @@ const Login = () => {
                     />
                   }
                 />
-                <Text className="text-xs text-slate-500 font-medium">
+                <Text className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
                   Checking system...
                 </Text>
               </>
@@ -235,24 +242,38 @@ const Login = () => {
                 <div className="w-9 h-9 bg-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xs font-bold">DB</span>
                 </div>
-                <Title level={4} className="!mb-0 !text-slate-900 font-bold">
+                <Title level={4} className="!mb-0 font-bold" style={{ color: "var(--text-primary)" }}>
                   RBS Portal
                 </Title>
               </div>
             </div>
 
             {/* Login Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 lg:p-10 border border-slate-200">
+            <div
+              className="rounded-2xl shadow-lg p-8 lg:p-10 border"
+              style={{
+                background: "var(--bg-container)",
+                borderColor: "var(--border-color)",
+                boxShadow: "var(--shadow-lg)",
+                transition: "all 0.3s ease",
+              }}
+            >
               <div className="text-center mb-8">
                 <div className="inline-block mb-4">
-                  <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "rgba(13, 148, 136, 0.12)",
+                      color: "#0d9488",
+                    }}
+                  >
                     <LockOutlined className="text-xl" />
                   </div>
                 </div>
-                <Title level={4} className="!mb-1 !text-slate-900 font-bold">
+                <Title level={4} className="!mb-1 font-bold" style={{ color: "var(--text-primary)" }}>
                   Sign In
                 </Title>
-                <Text className="!text-slate-600 text-sm">
+                <Text style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
                   Enter your credentials to continue
                 </Text>
               </div>
@@ -266,7 +287,7 @@ const Login = () => {
                 <Form.Item
                   name="username"
                   label={
-                    <span className="font-medium text-slate-700 text-sm">
+                    <span className="font-medium text-sm" style={{ color: "var(--text-secondary)" }}>
                       Employee ID
                     </span>
                   }
@@ -280,7 +301,12 @@ const Login = () => {
                   <Input
                     prefix={<UserOutlined className="text-slate-400" />}
                     placeholder="Enter your employee ID"
-                    className="rounded-lg h-11 border-slate-300 focus:border-teal-500 focus:ring-teal-500 text-base"
+                    className="rounded-lg h-11 text-base"
+                    style={{
+                      background: "var(--bg-card)",
+                      borderColor: "var(--border-color)",
+                      color: "var(--text-primary)",
+                    }}
                     onPressEnter={handleSubmit}
                   />
                 </Form.Item>
@@ -288,7 +314,7 @@ const Login = () => {
                 <Form.Item
                   name="password"
                   label={
-                    <span className="font-medium text-slate-700 text-sm">
+                    <span className="font-medium text-sm" style={{ color: "var(--text-secondary)" }}>
                       Password
                     </span>
                   }
@@ -299,14 +325,22 @@ const Login = () => {
                   <Input.Password
                     prefix={<LockOutlined className="text-slate-400" />}
                     placeholder="Enter your password"
-                    className="rounded-lg h-11 border-slate-300 focus:border-teal-500 focus:ring-teal-500 text-base"
+                    className="rounded-lg h-11 text-base"
+                    style={{
+                      background: "var(--bg-card)",
+                      borderColor: "var(--border-color)",
+                      color: "var(--text-primary)",
+                    }}
                     onPressEnter={handleSubmit}
                   />
                 </Form.Item>
 
                 <div className="flex items-center justify-between mb-7">
                   <Form.Item name="remember" valuePropName="checked" noStyle>
-                    <Checkbox className="text-slate-600 text-sm font-medium">
+                    <Checkbox
+                      className="text-sm font-medium"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       Remember me
                     </Checkbox>
                   </Form.Item>
@@ -340,8 +374,14 @@ const Login = () => {
               </Form>
 
               {/* Security Footer */}
-              <div className="mt-7 pt-6 border-t border-slate-200">
-                <div className="flex items-center justify-center gap-2 text-slate-600 text-xs">
+              <div
+                className="mt-7 pt-6 border-t"
+                style={{ borderColor: "var(--border-color)" }}
+              >
+                <div
+                  className="flex items-center justify-center gap-2 text-xs"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   <SafetyOutlined className="text-teal-600 text-sm" />
                   <span>Your connection is secure and encrypted</span>
                 </div>
@@ -350,7 +390,7 @@ const Login = () => {
 
             {/* Support Link */}
             <div className="text-center mt-6">
-              <Text className="text-slate-600 text-sm">
+              <Text className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 Having trouble?{" "}
                 <a
                   href="#"
@@ -387,7 +427,7 @@ const Login = () => {
         }
 
         .ant-checkbox-wrapper {
-          color: #64748b;
+          color: var(--text-secondary) !important;
         }
 
         .ant-checkbox-checked .ant-checkbox-inner {
@@ -396,17 +436,35 @@ const Login = () => {
         }
 
         .ant-input::placeholder {
-          color: #cbd5e1;
+          color: var(--text-muted) !important;
         }
 
         .ant-input:disabled {
-          background-color: #f1f5f9;
+          background-color: var(--bg-app) !important;
+          color: var(--text-muted) !important;
           cursor: not-allowed;
         }
 
         .ant-input-password-input:disabled {
-          background-color: #f1f5f9;
+          background-color: var(--bg-app) !important;
+          color: var(--text-muted) !important;
           cursor: not-allowed;
+        }
+        
+        [data-theme='dark'] .ant-input-affix-wrapper {
+          background-color: var(--bg-card) !important;
+          border-color: var(--border-color) !important;
+        }
+        [data-theme='dark'] .ant-input {
+          background-color: transparent !important;
+          color: var(--text-primary) !important;
+        }
+        [data-theme='dark'] .ant-input-password {
+          background-color: var(--bg-card) !important;
+          border-color: var(--border-color) !important;
+        }
+        [data-theme='dark'] .ant-input-password-input {
+          background-color: transparent !important;
         }
       `}</style>
       </div>

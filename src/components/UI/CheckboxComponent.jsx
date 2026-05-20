@@ -128,13 +128,13 @@ const groupLabelRow = {
 const labelStyle = {
   fontSize: 13,
   fontWeight: 500,
-  color: "#334155",
+  color: "var(--text-primary)",
 };
 
 const groupLabelText = {
   fontSize: 12.5,
   fontWeight: 600,
-  color: "#475569",
+  color: "var(--text-secondary)",
   letterSpacing: "0.01em",
 };
 
@@ -152,7 +152,7 @@ const groupStyle = {
 
 const hintStyle = {
   fontSize: 11,
-  color: "#94a3b8",
+  color: "var(--text-muted)",
   margin: 0,
   lineHeight: 1.4,
 };

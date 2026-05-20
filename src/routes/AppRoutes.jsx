@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { ConfigProvider, theme as antdTheme } from "antd";
 
 // Local Import
 import Login from "@/pages/Login";
@@ -9,14 +10,18 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
 import { restoreAuthState, logoutUser } from "@/redux/slices/authSlice";
 import { initializeAxiosInterceptors, isTokenValid } from "@/utilities/axiosApiCall";
-import { Spin } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
 import SplashScreen from "../components/UI/SplashScreen";
 
 function AppRoutes() {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const initializing = useSelector((state) => state.auth.initializing);
+  const themeMode = useSelector((state) => state.theme.mode);
+
+  // Sync data-theme attribute with document element
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", themeMode);
+  }, [themeMode]);
 
   // Restore auth state from localStorage on app load
   useEffect(() => {
@@ -47,14 +52,9 @@ function AppRoutes() {
     return () => clearTimeout(timer);
   }, [dispatch]);
 
-  // Show splash screen while initializing
-  if (initializing) {
-    return (
-      <SplashScreen tip="Initializing application..." />
-    );
-  }
-
-  return (
+  const routesNode = initializing ? (
+    <SplashScreen tip="Initializing application..." />
+  ) : (
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
@@ -75,6 +75,23 @@ function AppRoutes() {
         element={<Navigate to={isAuthenticated ? "/rbs" : "/login"} replace />}
       />
     </Routes>
+  );
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm:
+          themeMode === "dark"
+            ? antdTheme.darkAlgorithm
+            : antdTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: "#0d9488",
+          borderRadius: 8,
+        },
+      }}
+    >
+      {routesNode}
+    </ConfigProvider>
   );
 }
 

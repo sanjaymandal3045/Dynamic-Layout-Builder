@@ -88,12 +88,18 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
   return (
     <>
       {contextHolder}
-      <div className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 mb-8">
+      <div 
+        className="sticky top-0 z-50 w-full backdrop-blur-md px-6 py-4 mb-8"
+        style={{
+          background: "var(--bg-header-rgba)",
+          borderBottom: "1px solid var(--border-color)",
+        }}
+      >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           {/* Left Section: Branding & Metadata */}
           <div className="flex items-center gap-6">
-            <div className="pr-6 border-r border-slate-200 hidden lg:block">
-              <Title level={4} className="!m-0 tracking-tight text-blue-600">
+            <div className="pr-6 border-r hidden lg:block" style={{ borderColor: "var(--border-color)" }}>
+              <Title level={4} className="!m-0 tracking-tight" style={{ color: "var(--accent-gradient-end)" }}>
                 Report Configuration
               </Title>
             </div>
@@ -101,7 +107,7 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Page Key Input */}
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-slate-500 ml-1 mb-1 uppercase">
+                <label className="text-[10px] font-bold ml-1 mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
                   Page Key
                   <span className="text-red-500 ml-1">*</span>
                 </label>
@@ -110,18 +116,19 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
                   placeholder="e.g. user-profile"
                   value={config.pageKey}
                   onChange={handlePageKeyChange}
-                  className={`w-full sm:w-48 bg-slate-50 border-slate-200 hover:border-blue-400 focus:bg-white transition-all ${
-                    !isPageKeyValid && config.pageKey !== undefined
-                      ? "border-red-400 focus:border-red-500"
-                      : ""
-                  }`}
-                  prefix={<SettingOutlined className="text-slate-400" />}
+                  className="w-full sm:w-48"
+                  style={{
+                    background: "var(--bg-app)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-primary)",
+                  }}
+                  prefix={<SettingOutlined style={{ color: "var(--text-muted)" }} />}
                 />
               </div>
 
               {/* Display Title Input */}
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold text-slate-500 ml-1 mb-1 uppercase">
+                <label className="text-[10px] font-bold ml-1 mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
                   Display Title
                   <span className="text-red-500 ml-1">*</span>
                 </label>
@@ -130,11 +137,12 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
                   placeholder="Enter Report Title"
                   value={config.title}
                   onChange={handleTitleChange}
-                  className={`w-full sm:w-64 bg-slate-50 border-slate-200 hover:border-blue-400 focus:bg-white transition-all ${
-                    !isTitleValid && config.title !== undefined
-                      ? "border-red-400 focus:border-red-500"
-                      : ""
-                  }`}
+                  className="w-full sm:w-64"
+                  style={{
+                    background: "var(--bg-app)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-primary)",
+                  }}
                 />
               </div>
             </div>
@@ -147,7 +155,11 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
                 <Button
                   icon={<EyeOutlined />}
                   onClick={onPreview}
-                  className="border-slate-200 text-slate-600 hover:text-blue-500"
+                  style={{
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-secondary)",
+                    background: "var(--bg-card)",
+                  }}
                 >
                   Preview
                 </Button>
@@ -156,12 +168,16 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
               <Button
                 icon={<CodeOutlined />}
                 onClick={onJson}
-                className="border-slate-200 text-slate-600 hover:text-blue-500"
+                style={{
+                  borderColor: "var(--border-color)",
+                  color: "var(--text-secondary)",
+                  background: "var(--bg-card)",
+                }}
               >
                 JSON
               </Button>
 
-              <Divider type="vertical" className="h-8 border-slate-200" />
+              <Divider type="vertical" style={{ borderColor: "var(--border-color)", height: 32 }} />
 
               <Tooltip
                 title={
@@ -174,7 +190,12 @@ const HeaderBar = ({ config, onUpdateConfig, onPreview, onJson }) => {
                   type="primary"
                   icon={<CloudUploadOutlined />}
                   onClick={saveConfig}
-                  className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-100 px-6"
+                  style={{
+                    background: "linear-gradient(135deg, var(--accent-gradient-start), var(--accent-gradient-end))",
+                    borderColor: "transparent",
+                    color: "#fff",
+                    boxShadow: "var(--shadow-sm)",
+                  }}
                   loading={saveConfigApi.loading}
                   disabled={!isFormValid}
                 >

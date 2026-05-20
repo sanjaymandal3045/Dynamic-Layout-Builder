@@ -23,7 +23,7 @@ const SectionsList = ({
           alignItems: "center",
         }}
       >
-        <h2 className="text-lg font-semibold text-slate-700">Sections</h2>
+        <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Sections</h2>
         <Button type="dashed" onClick={onAddSection}>
           Add Section
         </Button>

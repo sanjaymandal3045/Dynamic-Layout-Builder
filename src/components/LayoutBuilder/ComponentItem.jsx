@@ -15,6 +15,9 @@ const TYPE_COLORS = {
   newline: "bg-rose-400",
   card: "bg-indigo-500",
   select: "bg-red-500",
+  table: "bg-cyan-500",
+  checkbox: "bg-yellow-500",
+  upload: "bg-violet-500",
 };
 
 const ComponentItem = ({
@@ -34,7 +37,20 @@ const ComponentItem = ({
   };
 
   return (
-    <div className="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center group hover:border-indigo-400 hover:shadow-md transition-all duration-200">
+    <div 
+      className="p-3 rounded-xl border flex justify-between items-center group transition-all duration-200"
+      style={{
+        background: "var(--bg-card)",
+        borderColor: "var(--border-color)",
+        boxShadow: "var(--shadow-sm)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--accent-gradient-end)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border-color)";
+      }}
+    >
       <div className="flex items-center space-x-4">
         {/* Dynamic Color Indicator */}
         <div
@@ -44,16 +60,24 @@ const ComponentItem = ({
         />
 
         <div className="flex flex-col">
-          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-tight">
+          <span className="text-[10px] font-bold uppercase tracking-tight" style={{ color: "var(--text-muted)" }}>
             {component.type}
           </span>
-          <span className="font-semibold text-slate-700 text-sm">
-            {component.label || component.content?.substring(0, 20) || "Element"}
+          <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+            {component.label ||
+              component.content?.substring(0, 20) ||
+              "Element"}
           </span>
         </div>
       </div>
 
-      <Space className="bg-slate-50 p-1 rounded-lg border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <Space 
+        className="p-1 rounded-lg border opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        style={{
+          background: "var(--bg-app)",
+          borderColor: "var(--border-color)",
+        }}
+      >
         <Button
           size="small"
           type="text"
@@ -61,7 +85,7 @@ const ComponentItem = ({
           icon={<SettingOutlined />}
           onClick={() => onConfigure(section.id, component)}
         />
-        <Divider type="vertical" />
+        <Divider type="vertical" style={{ borderColor: "var(--border-color)" }} />
         <Button
           size="small"
           type="text"

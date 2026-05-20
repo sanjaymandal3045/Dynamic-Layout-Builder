@@ -42,6 +42,12 @@ const FieldWrap = ({ gridColumn, children }) => (
 
 const uploadNameCache = new Map();
 
+// ── Resolve a dot-notation path on an object ─────────────────────────────────
+const resolvePath = (obj, path) => {
+  if (!obj || !path) return undefined;
+  return path.split(".").reduce((acc, key) => acc?.[key], obj);
+};
+
 const ComponentRenderer = ({
   component,
   value,
@@ -159,7 +165,11 @@ const ComponentRenderer = ({
         attributes: {},
       };
       const res = await dataTableApi.post(component.dataUrl, menuParams);
-      if (res?.data) setTableData(res.data.attributes.menuTree);
+      if (res?.data) {
+        const path = component.dataResponsePath || "data.attributes.menuTree";
+        const extracted = resolvePath(res, path);
+        setTableData(Array.isArray(extracted) ? extracted : []);
+      }
     } catch (e) {
       console.error("Failed to fetch table data", e);
       messageApi.error("Failed to load table data");
@@ -364,7 +374,10 @@ const ComponentRenderer = ({
               style={{
                 fontSize: component.fontSize || 14,
                 fontWeight: component.fontWeight || 400,
-                color: component.color || "#334155",
+                color:
+                  component.color && component.color !== "#334155"
+                    ? component.color
+                    : "var(--text-primary)",
                 lineHeight: 1.6,
                 display: "block",
                 padding: "6px 0",
@@ -474,16 +487,18 @@ const ComponentRenderer = ({
               size="small"
               style={{
                 borderRadius: 10,
-                border: "1px solid #e8edf2",
-                boxShadow: "0 1px 4px rgba(15,23,42,0.06)",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-card)",
+                boxShadow: "var(--shadow-sm)",
               }}
               styles={{
                 header: {
                   fontWeight: 600,
                   fontSize: 13,
-                  borderBottom: "1px solid #f1f5f9",
+                  borderBottom: "1px solid var(--border-color)",
+                  color: "var(--text-primary)",
                 },
-                body: { color: "#64748b", padding: 14 },
+                body: { color: "var(--text-secondary)", padding: 14 },
               }}
             >
               {component.children}
@@ -506,6 +521,30 @@ const ComponentRenderer = ({
         );
         const isDisabled = disabled || state.isDisabled;
 
+        const currentOptions = component.dataSource === "api" ? apiData : validOptions;
+
+        let displayValue = value;
+        if (value !== undefined && value !== null) {
+          const valueExists = currentOptions.some((o) => o.value === value);
+          if (!valueExists) {
+            const stringifiedValue = String(value);
+            const stringExists = currentOptions.some(
+              (o) => o.value === stringifiedValue
+            );
+            if (stringExists) {
+              displayValue = stringifiedValue;
+            } else {
+              const numValue = Number(value);
+              if (!isNaN(numValue)) {
+                const numExists = currentOptions.some(
+                  (o) => o.value === numValue
+                );
+                if (numExists) displayValue = numValue;
+              }
+            }
+          }
+        }
+
         return (
           <FieldWrap gridColumn={gc}>
             <div style={fieldGroup}>
@@ -518,11 +557,9 @@ const ComponentRenderer = ({
                 style={{ width: "100%", ...inputStyle(isDisabled) }}
                 placeholder={component.placeholder}
                 loading={loading}
-                value={value || undefined}
+                value={displayValue !== undefined && displayValue !== null ? displayValue : undefined}
                 onChange={(val) => onValueChange(component.name, val)}
-                options={
-                  component.dataSource === "api" ? apiData : validOptions
-                }
+                options={currentOptions}
                 allowClear
                 disabled={isDisabled}
                 showSearch
@@ -794,17 +831,18 @@ const ComponentRenderer = ({
                 {...uploadProps}
                 style={{
                   width: "100%",
-                  background: isDisabled ? "#f8fafc" : undefined,
+                  background: isDisabled ? "var(--bg-app)" : "var(--bg-card)",
+                  borderColor: "var(--border-color)",
                 }}
               >
                 <p className="ant-upload-drag-icon">
                   <InboxOutlined
-                    style={{ color: "rgb(126 157 219)", fontWeight: "200" }}
+                    style={{ color: "var(--accent-gradient-end)", fontWeight: "200" }}
                   />
                 </p>
                 <p
                   className="ant-upload-text"
-                  style={{ color: "rgb(52 115 241)", fontWeight: "400" }}
+                  style={{ color: "var(--text-secondary)", fontWeight: "400" }}
                 >
                   Click or drag file to this area to upload
                 </p>
@@ -839,7 +877,7 @@ const labelStyle = {
 const labelText = {
   fontSize: 12.5,
   fontWeight: 600,
-  color: "#475569",
+  color: "var(--text-secondary)",
   letterSpacing: "0.01em",
   lineHeight: 1,
 };
@@ -862,8 +900,9 @@ const inputStyle = (isDisabled) => ({
   borderRadius: 8,
   fontSize: 13.5,
   height: 36,
-  background: isDisabled ? "#f8fafc" : "#fff",
-  borderColor: "#e2e8f0",
+  background: isDisabled ? "var(--bg-app)" : "var(--bg-card)",
+  borderColor: "var(--border-color)",
+  color: "var(--text-primary)",
   transition: "border-color 0.2s, box-shadow 0.2s",
 });
 

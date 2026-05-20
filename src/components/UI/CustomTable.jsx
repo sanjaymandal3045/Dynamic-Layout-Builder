@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useRef } from "react";
 import { Table, Empty, Typography, message } from "antd";
+import { useSelector } from "react-redux";
 
 const { Text } = Typography;
 
@@ -46,6 +47,12 @@ const CustomTable = memo(
     title,
     showTitle,
   }) => {
+    const themeMode = useSelector((state) => state.theme?.mode);
+    const isDark = themeMode === "dark";
+
+    const resolvedPrimary = isDark ? "var(--accent-gradient-end)" : primaryColor;
+    const resolvedSecondary = isDark ? "var(--bg-hover)" : secondaryColor;
+
     // ── Version key ──────────────────────────────────────────────────────────
     // Increments only when the dataSource reference changes.
     // This generates a new CSS class name so the animation re-fires only on
@@ -77,8 +84,8 @@ const CustomTable = memo(
       }
 
       /* Striped rows */
-      tr.ct-even td { background: #fafafa !important; }
-      tr.ct-odd  td { background: #ffffff !important; }
+      tr.ct-even td { background: var(--bg-card) !important; }
+      tr.ct-odd  td { background: var(--bg-app) !important; }
 
       /* Hover highlight */
       ${
@@ -86,7 +93,7 @@ const CustomTable = memo(
           ? `
       tr.ct-even:hover td,
       tr.ct-odd:hover  td {
-        background: rgba(24, 144, 255, 0.07) !important;
+        background: var(--bg-hover) !important;
       }
       tr.ct-even td,
       tr.ct-odd  td {
@@ -123,18 +130,20 @@ const CustomTable = memo(
           ...col,
           onHeaderCell: () => ({
             style: {
-              backgroundColor: secondaryColor,
+              backgroundColor: resolvedSecondary,
+              color: "var(--text-primary)",
               fontWeight: 600,
               fontSize: 14,
-              borderBottom: `2px solid ${primaryColor}`,
+              borderBottom: `2px solid ${resolvedPrimary}`,
               ...customHeaderStyle,
             },
           }),
           onCell: (_record, rowIdx) => ({
             style: {
+              color: "var(--text-primary)",
               ...(highlightFirstColumn &&
                 idx === 0 && {
-                  backgroundColor: rowIdx % 2 === 0 ? "#fafafa" : "#fff",
+                  backgroundColor: rowIdx % 2 === 0 ? "var(--bg-card)" : "var(--bg-app)",
                   fontWeight: 500,
                 }),
               ...customRowStyle,
@@ -142,7 +151,7 @@ const CustomTable = memo(
           }),
         })),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [columns, primaryColor, secondaryColor, highlightFirstColumn],
+      [columns, resolvedPrimary, resolvedSecondary, highlightFirstColumn],
     );
 
     // ── Pagination ───────────────────────────────────────────────────────────
@@ -160,7 +169,7 @@ const CustomTable = memo(
     // ── Empty state ──────────────────────────────────────────────────────────
     const emptyNode = customEmptyComponent ?? (
       <Empty description="No Results" style={{ margin: "48px 0" }}>
-        <Text type="secondary">
+        <Text type="secondary" style={{ color: "var(--text-secondary)" }}>
           {hasActiveFilters
             ? "No records found matching your filters"
             : emptyText}
@@ -212,9 +221,9 @@ const CustomTable = memo(
           expandable={{ showExpandColumn: false }}
           style={{
             borderRadius: 10,
-            border: "1px solid #e8edf2",
+            border: "1px solid var(--border-color)",
             overflow: "hidden",
-            boxShadow: "0 1px 4px rgba(15,23,42,0.04)",
+            boxShadow: "var(--shadow-sm)",
           }}
         />
       </>

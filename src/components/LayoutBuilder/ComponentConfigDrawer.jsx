@@ -1135,7 +1135,6 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                       updateField("tableApiCommon", undefined);
                     } else {
                       updateField("dataSourceButtonName", undefined);
-                      updateField("dataResponsePath", undefined);
                     }
                   }}
                   size="large"
@@ -1199,22 +1198,22 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                       size="large"
                     />
                   </FormField>
-
-                  <FormField
-                    label="Response Data Path"
-                    hint='Dot-notation path to extract the data array from the API response. Default: "data.attributes.data"'
-                  >
-                    <Input
-                      value={formData.dataResponsePath || ""}
-                      onChange={(e) =>
-                        updateField("dataResponsePath", e.target.value)
-                      }
-                      placeholder="data.attributes.data"
-                      size="large"
-                    />
-                  </FormField>
                 </>
               )}
+
+              <FormField
+                label="Response Data Path"
+                hint='Dot-notation path to extract the data array from the API response. Default: "data.attributes.menuTree" (API) or "data.attributes.data" (External)'
+              >
+                <Input
+                  value={formData.dataResponsePath || ""}
+                  onChange={(e) =>
+                    updateField("dataResponsePath", e.target.value)
+                  }
+                  placeholder="e.g. data.attributes.records"
+                  size="large"
+                />
+              </FormField>
             </div>
 
             <Checkbox
