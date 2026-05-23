@@ -56,7 +56,7 @@ const overlayStyle = {
   alignItems: "center",
   
   // Transparency & Blur
-  backgroundColor: "rgba(255, 255, 255, 0.4)", // Ultra-light transparent
+  backgroundColor: "var(--bg-overlay-light)", // dynamic transparent
   backdropFilter: "blur(8px)", // Stronger blur for "depth"
   WebkitBackdropFilter: "blur(8px)",
   zIndex: 999,
@@ -79,7 +79,7 @@ const loaderBox = {
 const trackStyle = {
   position: "absolute",
   inset: 0,
-  border: "3px solid rgba(13, 148, 136, 0.1)",
+  border: "3px solid var(--primary-color-track)",
   borderRadius: "50%",
 };
 
@@ -87,7 +87,7 @@ const orbitStyle = {
   position: "absolute",
   inset: 0,
   border: "3px solid transparent",
-  borderTop: "3px solid #0d9488",
+  borderTop: "3px solid var(--primary-color)",
   borderRadius: "50%",
   animation: "rotate 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite",
 };
@@ -96,7 +96,7 @@ const glowStyle = {
   position: "absolute",
   inset: "-5px",
   borderRadius: "50%",
-  background: "radial-gradient(circle, rgba(13, 148, 136, 0.1) 0%, transparent 70%)",
+  background: "radial-gradient(circle, var(--primary-color-glow) 0%, transparent 70%)",
   animation: "shimmer 2s infinite ease-in-out",
 };
 
@@ -108,7 +108,7 @@ const textStack = {
 };
 
 const labelStyle = {
-  color: "#0d9488",
+  color: "var(--primary-color)",
   fontSize: "13px",
   fontWeight: "600",
   letterSpacing: "0.08em",

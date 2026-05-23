@@ -63,9 +63,9 @@ const ErrorScreen = ({
           100% { transform: scale(1);   opacity: 0.6; }
         }
         .error-retry-btn:hover {
-          background: rgba(220, 38, 38, 0.18) !important;
+          background: var(--color-error-hover-bg) !important;
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2) !important;
+          box-shadow: 0 4px 12px var(--color-error-glow) !important;
         }
         .error-retry-btn:active {
           transform: translateY(0px);
@@ -88,7 +88,7 @@ const overlayStyle = {
   justifyContent: "center",
   alignItems: "center",
 
-  backgroundColor: "rgba(255, 255, 255, 0.45)",
+  backgroundColor: "var(--bg-overlay-heavy)",
   backdropFilter: "blur(8px)",
   WebkitBackdropFilter: "blur(8px)",
   zIndex: 999,
@@ -114,7 +114,7 @@ const iconBox = {
 const iconTrack = {
   position: "absolute",
   inset: 0,
-  border: "2.5px solid rgba(220, 38, 38, 0.15)",
+  border: "2.5px solid var(--color-error-track)",
   borderRadius: "50%",
   animation: "pulseRing 2.2s ease-in-out infinite",
 };
@@ -122,7 +122,7 @@ const iconTrack = {
 const iconInner = {
   position: "relative",
   zIndex: 1,
-  color: "#dc2626",
+  color: "var(--color-error)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -131,7 +131,7 @@ const iconInner = {
 const svgStyle = {
   width: "28px",
   height: "28px",
-  color: "#dc2626",
+  color: "var(--color-error)",
 };
 
 const glowStyle = {
@@ -139,7 +139,7 @@ const glowStyle = {
   inset: "-6px",
   borderRadius: "50%",
   background:
-    "radial-gradient(circle, rgba(220, 38, 38, 0.12) 0%, transparent 70%)",
+    "radial-gradient(circle, var(--color-error-glow) 0%, transparent 70%)",
   animation: "shimmerError 2.5s infinite ease-in-out",
 };
 
@@ -153,7 +153,7 @@ const textStack = {
 };
 
 const titleStyle = {
-  color: "#dc2626",
+  color: "var(--color-error)",
   fontSize: "14px",
   fontWeight: "700",
   letterSpacing: "0.06em",
@@ -161,7 +161,7 @@ const titleStyle = {
 };
 
 const messageStyle = {
-  color: "#64748b",
+  color: "var(--text-secondary)",
   fontSize: "12px",
   fontWeight: "500",
   lineHeight: "1.6",
@@ -175,9 +175,9 @@ const retryBtnStyle = {
   padding: "6px 18px",
   fontSize: "12px",
   fontWeight: "600",
-  color: "#dc2626",
-  background: "rgba(220, 38, 38, 0.08)",
-  border: "1.5px solid rgba(220, 38, 38, 0.3)",
+  color: "var(--color-error)",
+  background: "var(--color-error-bg)",
+  border: "1.5px solid var(--color-error-border)",
   borderRadius: "20px",
   cursor: "pointer",
   letterSpacing: "0.04em",

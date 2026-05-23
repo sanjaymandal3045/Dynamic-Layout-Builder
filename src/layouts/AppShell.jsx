@@ -316,7 +316,7 @@ const AppShell = ({
             }}
           >
             <Text type="secondary" style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              DBBL RBS Portal © {new Date().getFullYear()} • IT Development
+              DBBL Common Data Repository © {new Date().getFullYear()} • IT Development
               Division
             </Text>
           </div>

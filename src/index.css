@@ -11,14 +11,14 @@
   -moz-osx-font-smoothing: grayscale;
 
   /* Light Theme Variables */
-  --bg-app: #f8fafc;
+  --bg-app: #f4f6fa;
   --bg-container: #ffffff;
   --bg-card: #ffffff;
   --bg-sidebar: #ffffff;
   --bg-header: #ffffff;
-  --bg-footer: #ffffff;
+  --bg-footer: #f4f6fa;
   --bg-hover: #f1f5f9;
-  --bg-header-rgba: rgba(255, 255, 255, 0.8);
+  --bg-header-rgba: rgba(255, 255, 255, 0.85);
   
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -36,25 +36,47 @@
   
   --section-header-bg: linear-gradient(90deg, #f1f1f1 0%, #d8e3f9 75%);
   --quick-action-card-bg: rgba(255, 255, 255, 0.8);
+  
+  /* Overlay & UI Component Colors */
+  --bg-overlay-light: rgba(255, 255, 255, 0.4);
+  --bg-overlay-heavy: rgba(255, 255, 255, 0.85);
+  
+  --primary-color: #0d9488;
+  --primary-color-track: rgba(13, 148, 136, 0.1);
+  --primary-color-glow: rgba(13, 148, 136, 0.1);
+  
+  --color-error: #dc2626;
+  --color-error-bg: rgba(220, 38, 38, 0.08);
+  --color-error-border: rgba(220, 38, 38, 0.3);
+  --color-error-hover-bg: rgba(220, 38, 38, 0.18);
+  --color-error-glow: rgba(220, 38, 38, 0.12);
+  --color-error-track: rgba(220, 38, 38, 0.15);
+
+  /* Menu Selection Colors */
+  --menu-selected-bg: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(13, 148, 136, 0.02) 100%);
+  --menu-selected-color: #0d9488;
+  --menu-selected-shadow: 0 4px 12px rgba(13, 148, 136, 0.05);
+  --menu-selected-indicator: #0d9488;
+  --menu-hover-icon-color: #0d9488;
 }
 
 [data-theme='dark'] {
-  /* Dark Theme Variables */
-  --bg-app: #0b0f19;
-  --bg-container: #151c2c;
-  --bg-card: #151c2c;
-  --bg-sidebar: #151c2c;
-  --bg-header: #151c2c;
-  --bg-footer: #151c2c;
-  --bg-hover: #1e293b;
-  --bg-header-rgba: rgba(21, 28, 44, 0.8);
+  /* Dark Theme Variables - Optimized for appealing elevation and hierarchy */
+  --bg-app: #0e121e;          /* Deeper dark background for enhanced contrast */
+  --bg-container: #151c2c;   /* Slate navy containers */
+  --bg-card: #20293d;        /* Cards stand out from containers */
+  --bg-sidebar: #151c2c;     /* Clear dark sidebar */
+  --bg-header: #151c2c;      /* Clean header */
+  --bg-footer: #0e121e;      /* Blends with app background */
+  --bg-hover: #26334e;       /* Appealing hover backdrop */
+  --bg-header-rgba: rgba(21, 28, 44, 0.85);
   
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   
-  --border-color: #1e293b;
-  --border-secondary: #1e293b;
+  --border-color: #242f47;   /* Slate navy borders for premium definition */
+  --border-secondary: #1d2536;
   
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
@@ -63,8 +85,30 @@
   --accent-gradient-start: #818cf8;
   --accent-gradient-end: #14b8a6;
   
-  --section-header-bg: linear-gradient(90deg, #151c2c 0%, #0b0f19 75%);
+  --section-header-bg: linear-gradient(90deg, #151c2c 0%, #101522 75%);
   --quick-action-card-bg: rgba(30, 41, 59, 0.8);
+  
+  /* Overlay & UI Component Colors */
+  --bg-overlay-light: rgba(14, 18, 30, 0.5);
+  --bg-overlay-heavy: rgba(21, 28, 44, 0.9);
+  
+  --primary-color: #14b8a6;
+  --primary-color-track: rgba(20, 184, 166, 0.15);
+  --primary-color-glow: rgba(20, 184, 166, 0.15);
+  
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.1);
+  --color-error-border: rgba(248, 113, 113, 0.35);
+  --color-error-hover-bg: rgba(248, 113, 113, 0.22);
+  --color-error-glow: rgba(248, 113, 113, 0.15);
+  --color-error-track: rgba(248, 113, 113, 0.18);
+
+  /* Menu Selection Colors */
+  --menu-selected-bg: linear-gradient(135deg, rgba(20, 184, 166, 0.14) 0%, rgba(20, 184, 166, 0.03) 100%);
+  --menu-selected-color: #14b8a6;
+  --menu-selected-shadow: 0 4px 16px rgba(20, 184, 166, 0.1);
+  --menu-selected-indicator: #14b8a6;
+  --menu-hover-icon-color: #14b8a6;
 }
 
 /* ── Base Styles ── */
@@ -160,13 +204,14 @@ body,
   font-weight: 500;
   display: flex;
   align-items: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* Icon colors */
 .modern-menu .ant-menu-item .ant-menu-item-icon,
 .modern-menu .ant-menu-submenu-title .ant-menu-item-icon {
   color: var(--text-muted);
-  transition: color 0.3s ease;
+  transition: color 0.25s ease;
   font-size: 16px;
 }
 
@@ -175,25 +220,25 @@ body,
 .modern-menu .ant-menu-submenu-title:hover {
   background: var(--bg-hover) !important;
   color: var(--text-primary) !important;
-  transform: translateX(4px);
+  transform: translateX(6px);
 }
 
 .modern-menu .ant-menu-item:hover .ant-menu-item-icon,
 .modern-menu .ant-menu-submenu-title:hover .ant-menu-item-icon {
-  color: #3b82f6;
+  color: var(--menu-hover-icon-color) !important;
 }
 
 /* Active/Selected State */
 .modern-menu .ant-menu-item-selected {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
-  color: #2563eb !important;
+  background: var(--menu-selected-bg) !important;
+  color: var(--menu-selected-color) !important;
   font-weight: 600 !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.05) !important;
+  box-shadow: var(--menu-selected-shadow) !important;
   position: relative;
 }
 
 .modern-menu .ant-menu-item-selected .ant-menu-item-icon {
-  color: #2563eb !important;
+  color: var(--menu-selected-color) !important;
 }
 
 /* Subtle accent line on selected item */
@@ -205,9 +250,23 @@ body,
   transform: translateY(-50%);
   height: 50%;
   width: 4px;
-  background: #3b82f6;
+  background: var(--menu-selected-indicator);
   border-radius: 0 4px 4px 0;
-  box-shadow: 1px 0 6px rgba(59, 130, 246, 0.4);
+  box-shadow: 1px 0 8px var(--menu-selected-indicator);
+}
+
+/* Theme Toggle Button Enhancement */
+.theme-toggle-btn {
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-container) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.theme-toggle-btn:hover {
+  transform: rotate(15deg) scale(1.05);
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 /* Group titles */
@@ -249,7 +308,11 @@ body,
 }
 
 [data-theme='dark'] .ant-tabs-tab-active {
-  color: #2563eb !important;
+  color: var(--primary-color) !important;
+}
+
+[data-theme='dark'] .ant-tabs-ink-bar {
+  background: var(--primary-color) !important;
 }
 
 [data-theme='dark'] .ant-table {

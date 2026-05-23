@@ -456,7 +456,7 @@ const Login = () => {
           border-color: var(--border-color) !important;
         }
         [data-theme='dark'] .ant-input {
-          background-color: transparent !important;
+          // background-color: transparent !important;
           color: var(--text-primary) !important;
         }
         [data-theme='dark'] .ant-input-password {
@@ -464,7 +464,7 @@ const Login = () => {
           border-color: var(--border-color) !important;
         }
         [data-theme='dark'] .ant-input-password-input {
-          background-color: transparent !important;
+          // background-color: transparent !important;
         }
       `}</style>
       </div>

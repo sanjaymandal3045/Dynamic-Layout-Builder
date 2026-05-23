@@ -85,7 +85,7 @@ function AppRoutes() {
             ? antdTheme.darkAlgorithm
             : antdTheme.defaultAlgorithm,
         token: {
-          colorPrimary: "#0d9488",
+          colorPrimary: themeMode === "dark" ? "#14b8a6" : "#0d9488",
           borderRadius: 8,
         },
       }}
