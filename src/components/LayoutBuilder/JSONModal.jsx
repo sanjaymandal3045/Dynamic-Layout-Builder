@@ -4,7 +4,7 @@ import {
   CopyOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
-import { downloadJSON } from "../../utilities/common";
+import { downloadJSON } from "../../utils/common";
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { setConfig } from "../../redux/slices/layoutSlice";
@@ -141,8 +141,14 @@ const JSONModal = ({ open, onClose, config }) => {
                     height: "100%",
                   }}
                 >
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800 m-0">
+                  <div 
+                    className="p-3 rounded-lg border"
+                    style={{
+                      background: "var(--bg-app)",
+                      borderColor: "var(--border-color)",
+                    }}
+                  >
+                    <p className="text-sm m-0" style={{ color: "var(--text-secondary)" }}>
                       ✏️ <strong>Paste or edit JSON below</strong> to update
                       your layout design, then click "Apply Changes" to save.
                     </p>
@@ -172,7 +178,7 @@ const JSONModal = ({ open, onClose, config }) => {
               children: (
                 <div
                   style={{
-                    backgroundColor: "#f5f5f5",
+                    backgroundColor: "var(--bg-app)",
                     padding: 16,
                     borderRadius: 6,
                     height: "calc(100vh - 190px)", // Stretches to fill modal
@@ -183,7 +189,7 @@ const JSONModal = ({ open, onClose, config }) => {
                     style={{
                       fontSize: 12,
                       margin: 0,
-                      color: "#1f1f1f",
+                      color: "var(--text-primary)",
                       fontFamily: "monospace",
                       lineHeight: 1.5,
                     }}

@@ -42,6 +42,7 @@ const FilterSearchPanel = ({
   onSearch,
   isLoading = false,
   buttonLabel = "Search",
+  extraNodes = null,
 }) => {
   const firstOption = searchOptions[0]?.value ?? null;
 
@@ -116,19 +117,6 @@ const FilterSearchPanel = ({
 
   return (
     <div style={panelWrap}>
-      {/* ── Panel Header ─────────────────────────────────────── */}
-      <div style={panelHeader}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={iconBadge}>
-            <FilterOutlined style={{ fontSize: 14, color: T.icon }} />
-          </div>
-          <div>
-            <p style={headerTitle}>Search Filters</p>
-            <p style={headerSub}>{searchOptions.length} criteria available</p>
-          </div>
-        </div>
-      </div>
-
       {/* ── Filter Rows — 2-column responsive grid ───────────── */}
       <div style={filterGrid}>
         {filters.map((filter) => {
@@ -144,7 +132,7 @@ const FilterSearchPanel = ({
                 value={filter.searchType}
                 onChange={(v) => updateFilter(filter.id, "searchType", v)}
                 options={availOpts}
-                style={{ width: 170, flexShrink: 0 }}
+                style={{ width: 120, flexShrink: 0 }}
                 placeholder="Select field"
                 disabled={isLoading}
                 size="middle"
@@ -187,30 +175,33 @@ const FilterSearchPanel = ({
 
       {/* ── Action Row ───────────────────────────────────────── */}
       <div style={actionRow}>
-        {multiFilter && (
-          <Tooltip
-            title={
-              allOptionsUsed
-                ? "All available criteria are in use"
-                : "Add another search criterion"
-            }
-          >
-            <Button
-              type="dashed"
-              size="small"
-              icon={<PlusOutlined />}
-              onClick={addFilter}
-              disabled={allOptionsUsed || isLoading}
-              style={addBtn}
+        <div>
+          {multiFilter && (
+            <Tooltip
+              title={
+                allOptionsUsed
+                  ? "All available criteria are in use"
+                  : "Add another search criterion"
+              }
             >
-              Add Filter
-            </Button>
-          </Tooltip>
-        )}
+              <Button
+                type="dashed"
+                size="middle"
+                icon={<PlusOutlined />}
+                onClick={addFilter}
+                disabled={allOptionsUsed || isLoading}
+                style={addBtn}
+              >
+                Add Filter
+              </Button>
+            </Tooltip>
+          )}
+        </div>
 
-        <Space size={8}>
+        <Space size={8} style={{ flexWrap: "wrap" }}>
+          {extraNodes}
           <Button
-            size="small"
+            size="middle"
             icon={<ReloadOutlined />}
             onClick={handleReset}
             disabled={isLoading}
@@ -221,7 +212,7 @@ const FilterSearchPanel = ({
 
           <Button
             type="primary"
-            size="small"
+            size="middle"
             icon={<SearchOutlined />}
             loading={isLoading}
             disabled={!hasActiveFilter}
@@ -248,76 +239,35 @@ const FilterSearchPanel = ({
 
 const panelWrap = {
   width: "100%",
-  background: "linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)",
-  border: "1.5px solid #c7d2fe",
-  borderRadius: 14,
-  overflow: "hidden",
-  boxShadow: "0 2px 16px rgba(99,102,241,0.08)",
-};
-
-const panelHeader = {
-  padding: "14px 20px 12px",
-  borderBottom: "1px solid #e0e7ff",
-  background: "linear-gradient(90deg, #eef2ff 0%, #f5f3ff 100%)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: 10,
-};
-
-const iconBadge = {
-  width: 34,
-  height: 34,
-  borderRadius: 9,
-  background: "#e0e7ff",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-};
-
-const headerTitle = {
-  margin: 0,
-  fontSize: 13.5,
-  fontWeight: 700,
-  color: "#3730a3",
-  lineHeight: 1.2,
-};
-
-const headerSub = {
-  margin: 0,
-  fontSize: 11,
-  color: "#6366f1",
-  lineHeight: 1.4,
-  marginTop: 2,
 };
 
 // 2-column responsive grid — each row fills one cell
 const filterGrid = {
   display: "grid",
   gridTemplateColumns: "repeat(3, 1fr)",
-  gap: 12,
-  padding: "16px 20px 10px",
+  gap: 10,
+  padding: "0px 8px", // Reduced padding
 };
 
 // Each filter row is a flex row: [select] [input] [delete?]
 const filterRow = {
   display: "flex",
   alignItems: "center",
-  gap: 8,
-  padding: "10px 14px",
-  background: "#fff",
-  borderRadius: 10,
-  border: "1px solid #e8ecff",
-  boxShadow: "0 1px 4px rgba(99,102,241,0.06)",
+  gap: 6,
+  padding: "6px 10px", // Tighter padding
+  background: "var(--bg-card)",
+  borderRadius: 8,
+  border: "1px solid var(--border-color)",
+  boxShadow: "var(--shadow-sm)",
   transition: "border-color 0.2s, box-shadow 0.2s",
 };
 
 const valueInput = {
   flex: 1,
   borderRadius: 8,
-  borderColor: "#e0e7ff",
+  borderColor: "var(--border-color)",
+  background: "var(--bg-card)",
+  color: "var(--text-primary)",
   fontSize: 13,
   height: 34,
 };
@@ -326,34 +276,41 @@ const actionRow = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "10px 20px 14px",
-  borderTop: "1px solid #e0e7ff",
-  background: "#fafbff",
+  padding: "12px 8px 4px", // Compact top margin, minimal bottom
 };
 
 const addBtn = {
-  borderColor: "#a5b4fc",
-  color: "#4f46e5",
+  borderColor: "var(--border-color)",
+  background: "var(--bg-card)",
+  color: "var(--text-secondary)",
   borderRadius: 8,
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 500,
+  height: 36,
+  minWidth: 110,
 };
 
 const resetBtn = {
-  borderColor: "#e2e8f0",
-  color: "#64748b",
+  borderColor: "var(--border-color)",
+  background: "var(--bg-card)",
+  color: "var(--text-secondary)",
   borderRadius: 8,
-  fontSize: 12,
+  fontSize: 13,
+  fontWeight: 500,
+  height: 36,
+  minWidth: 110,
 };
 
 const searchBtn = {
-  background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+  background: "linear-gradient(135deg, #0d9488, #0f858dff)",
   borderColor: "transparent",
   borderRadius: 8,
   fontWeight: 600,
-  fontSize: 12,
-  boxShadow: "0 2px 8px rgba(99,102,241,0.35)",
+  fontSize: 13,
+  boxShadow: "0 2px 8px rgba(13,148,136,0.35)",
   color: "white",
+  height: 36,
+  minWidth: 110,
 };
 
 export default FilterSearchPanel;

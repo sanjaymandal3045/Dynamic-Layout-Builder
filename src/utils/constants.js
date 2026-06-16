@@ -7,7 +7,6 @@ import {
 } from "@ant-design/icons";
 import { Menu } from "lucide-react";
 
-
 // Date Format Constants
 export const DATE_FORMAT = "YYYY-MM-DD";
 export const DATE_DISPLAY_FORMAT = "MMM DD, YYYY";
@@ -17,29 +16,6 @@ export const DATE_RANGE_FORMAT = "YYYY-MM-DD";
 export const DEFAULT_DATE_RANGE_SINGLE = -1; // days from today
 export const DEFAULT_DATE_RANGE_START = -7; // days from today
 export const DEFAULT_DATE_RANGE_END = 0; // today
-
-// Color Palette
-export const COLORS = {
-  // CBS Deposit Colors
-  CASA: "#1976d2",      // Blue
-  TD: "#f57c00",        // Orange
-  RD: "#14b8a6",        // Teal
-  SND: "#8b5cf6",       // Purple
-
-  // Status Colors
-  UP: "#10b981",        // Green (positive trend)
-  DOWN: "#ef4444",      // Red (negative trend)
-  NEUTRAL: "#6b7280",   // Gray (no change)
-
-  // UI Colors
-  PRIMARY: "#2563eb",
-  SECONDARY: "#64748b",
-  SUCCESS: "#10b981",
-  ERROR: "#ef4444",
-  WARNING: "#f59e0b",
-  INFO: "#3b82f6",
-};
-
 
 // Chart Configuration
 export const CHART_CONFIG = {
@@ -63,26 +39,10 @@ export const API_ENDPOINTS = {
   // e.g., CBS_DEPOSIT: "/api/cbs/deposit",
 };
 
-// Menu Items Configuration
-export const MENU_KEYS = {
-  OVERVIEW: "overview",
-  CBS: "cbs",
-  CBS_REPORT: "cbs-report",
-  COD_REPORT: "cod-report",
-};
-
 // Pagination & Table Configuration
 export const TABLE_CONFIG = {
   DEFAULT_PAGE_SIZE: 10,
   PAGE_SIZE_OPTIONS: ["10", "20", "50", "100"],
-};
-
-// Currency & Number Formatting
-export const CURRENCY_CONFIG = {
-  CURRENCY: "BDT",
-  CURRENCY_SYMBOL: "৳",
-  DECIMAL_PLACES: 1,
-  UNIT: "mBDT", // Million BDT
 };
 
 // User Role Constants
@@ -102,38 +62,6 @@ export const MESSAGES = {
   LOADING: "Loading...",
 };
 
-export const menuConfig = [
-  {
-    key: "layout-builder",
-    icon: <ProjectOutlined />,
-    label: "Layout Builder",
-  },
-  {
-    key: "cbs",
-    icon: <BankOutlined />,
-    label: "CBS",
-    children: [
-      {
-        key: "menu-creation",
-        icon: <Menu size={16}/>,
-        label: "menu Creation",
-      },
-      {
-        key: "cbs-report",
-        icon: <WalletOutlined />,
-        label: "CRM Report",
-      },
-      {
-        key: "cod-report",
-        icon: <WalletOutlined />,
-        label: "COD Report",
-      },
-    ],
-  },
-];
-
-
-
 // -------------- Dynamic Layout Constants ----------------
 
 export const COMPONENT_TYPES = {
@@ -148,6 +76,7 @@ export const COMPONENT_TYPES = {
   SELECT: "select",
   TABLE: "table",
   CHECKBOX: "checkbox",
+  UPLOAD: "upload",
 };
 
 export const FIELD_TYPES = [
@@ -160,10 +89,4 @@ export const FIELD_TYPES = [
   "password",
 ];
 
-export const BUTTON_VARIANTS = [
-  "primary",
-  "default",
-  "dashed",
-  "text",
-  "link",
-];
+export const BUTTON_VARIANTS = ["primary", "default", "dashed", "text", "link"];

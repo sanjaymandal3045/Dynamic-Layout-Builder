@@ -2,59 +2,38 @@
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { ConfigProvider, theme as antdTheme } from "antd";
 
 // Local Import
 import Login from "@/pages/Login";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/routes/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
-import { restoreAuthState, logoutUser } from "@/redux/slices/authSlice";
-import { initializeAxiosInterceptors, isTokenValid } from "@/utilities/axiosApiCall";
-import { Spin } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
-import SplashScreen from "../components/UI/SplashScreen";
+import { restoreAuthState } from "@/redux/slices/authSlice";
+import { initializeAxiosInterceptors } from "@/services/axiosClient";
+import SplashScreen from "../components/ui/SplashScreen";
 
 function AppRoutes() {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const initializing = useSelector((state) => state.auth.initializing);
+  const themeMode = useSelector((state) => state.theme.mode);
 
-  // Restore auth state from localStorage on app load
+  // Sync data-theme attribute with document element
   useEffect(() => {
-    console.log("AppRoutes mounted - initializing authentication");
+    document.documentElement.setAttribute("data-theme", themeMode);
+  }, [themeMode]);
 
-    // Initialize axios interceptors with Redux dispatch
-    // This ensures that 401 errors will properly dispatch logoutUser action
+  // On app load: wire up axios interceptors and restore auth state from localStorage.
+  // We do NOT eagerly validate the access token here — if it's expired, the axios
+  // interceptor will silently refresh it on the first API call using the refresh token.
+  useEffect(() => {
     initializeAxiosInterceptors(dispatch);
-
-    const timer = setTimeout(() => {
-      // First, restore auth state from localStorage
-      dispatch(restoreAuthState());
-
-      // Then validate the token
-      const hasValidToken = isTokenValid();
-      console.log("Token validation on app startup:", {
-        hasToken: !!localStorage.getItem("accessToken"),
-        isValid: hasValidToken,
-      });
-
-      // If localStorage has auth data but token is invalid, logout
-      if (localStorage.getItem("accessToken") && !hasValidToken) {
-        console.log("Token found but invalid - logging out");
-        dispatch(logoutUser());
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
+    dispatch(restoreAuthState());
   }, [dispatch]);
 
-  // Show splash screen while initializing
-  if (initializing) {
-    return (
-      <SplashScreen tip="Initializing application..." />
-    );
-  }
-
-  return (
+  const routesNode = initializing ? (
+    <SplashScreen tip="Initializing application..." />
+  ) : (
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
@@ -75,6 +54,23 @@ function AppRoutes() {
         element={<Navigate to={isAuthenticated ? "/rbs" : "/login"} replace />}
       />
     </Routes>
+  );
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm:
+          themeMode === "dark"
+            ? antdTheme.darkAlgorithm
+            : antdTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: themeMode === "dark" ? "#14b8a6" : "#0d9488",
+          borderRadius: 8,
+        },
+      }}
+    >
+      {routesNode}
+    </ConfigProvider>
   );
 }
 

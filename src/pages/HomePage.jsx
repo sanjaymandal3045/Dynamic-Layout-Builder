@@ -1,5 +1,6 @@
 import React from "react";
 import { Typography, Tag } from "antd";
+import { useSelector } from "react-redux";
 import {
   AppstoreOutlined,
   SearchOutlined,
@@ -38,22 +39,22 @@ const QUICK_ACTIONS = [
   {
     key: "reports",
     icon: <FileTextOutlined style={{ fontSize: 26 }} />,
-    title: "Reports",
-    description: "Generate and review CL, BB Sector, and provision reports.",
+    title: "Activity Reports",
+    description: "View real-time operation and dynamic search summaries.",
     color: "#059669",
     bg: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
-    tag: "Analytics",
-    tagColor: "green",
+    tag: "Security",
+    tagColor: "emerald",
   },
   {
-    key: "admin",
-    icon: <SafetyCertificateOutlined style={{ fontSize: 26 }} />,
+    key: "user-admin",
+    icon: <AppstoreOutlined style={{ fontSize: 26 }} />,
     title: "Administration",
-    description: "Manage users, roles, permissions and system configuration.",
+    description: "Configure system modules, metadata, and core preferences.",
     color: "#d97706",
     bg: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
-    tag: "Admin",
-    tagColor: "gold",
+    tag: "Settings",
+    tagColor: "amber",
   },
 ];
 
@@ -66,12 +67,41 @@ const STATS = [
 ];
 
 const HomePage = ({ userName, onNavigate }) => {
+  const themeMode = useSelector((state) => state.theme.mode);
+  const isDark = themeMode === "dark";
+
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
     if (h < 17) return "Good afternoon";
     return "Good evening";
   })();
+
+  // Map theme variables to quick action cards
+  const actions = QUICK_ACTIONS.map((action) => {
+    let bg = action.bg;
+    let border = "1px solid rgba(255,255,255,0.8)";
+    if (isDark) {
+      const rgb =
+        action.key === "layout-builder"
+          ? "99, 102, 241"
+          : action.key === "contract-search"
+          ? "8, 145, 178"
+          : action.key === "reports"
+          ? "5, 150, 105"
+          : "217, 119, 6";
+      border = `1px solid rgba(${rgb}, 0.2)`;
+      if (action.key === "layout-builder")
+        bg = "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.03) 100%)";
+      else if (action.key === "contract-search")
+        bg = "linear-gradient(135deg, rgba(8, 145, 178, 0.12) 0%, rgba(8, 145, 178, 0.03) 100%)";
+      else if (action.key === "reports")
+        bg = "linear-gradient(135deg, rgba(5, 150, 105, 0.12) 0%, rgba(5, 150, 105, 0.03) 100%)";
+      else
+        bg = "linear-gradient(135deg, rgba(217, 119, 6, 0.12) 0%, rgba(217, 119, 6, 0.03) 100%)";
+    }
+    return { ...action, bg, border };
+  });
 
   return (
     <div style={pageWrap}>
@@ -86,7 +116,7 @@ const HomePage = ({ userName, onNavigate }) => {
             👋
           </Text>
           <Title level={2} style={bannerTitle}>
-            Welcome to RBS Portal
+            Welcome to Common Data Repository Portal
           </Title>
           <Text style={bannerSub}>· Dutch-Bangla Bank Limited ·</Text>
         </div>
@@ -106,17 +136,23 @@ const HomePage = ({ userName, onNavigate }) => {
             0%, 100% { opacity: 0.18; }
             50%       { opacity: 0.28; }
           }
+          .quick-card {
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          }
           .quick-card:hover {
             transform: translateY(-4px) !important;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.12) !important;
+            box-shadow: var(--shadow-lg) !important;
           }
           .quick-card:hover .arrow-icon {
             transform: translateX(4px);
             opacity: 1 !important;
           }
+          .stat-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          }
           .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.08) !important;
+            box-shadow: var(--shadow-md) !important;
           }
         `}</style>
       </div>
@@ -136,19 +172,19 @@ const HomePage = ({ userName, onNavigate }) => {
 
       {/* ── Quick Actions ───────────────────────────────────── */}
       <div style={sectionHeader}>
-        <Title level={4} style={{ margin: 0, color: "#1e293b" }}>
+        <Title level={4} style={{ margin: 0, color: "var(--text-primary)" }}>
           Quick Access
         </Title>
-        <Text type="secondary" style={{ fontSize: 13 }}>
+        <Text type="secondary" style={{ fontSize: 13, color: "var(--text-secondary)" }}>
           Jump straight into the module you need
         </Text>
       </div>
 
       <div style={actionsGrid}>
-        {QUICK_ACTIONS.map((action) => (
+        {actions.map((action) => (
           <div
             key={action.key}
-            style={{ ...actionCard, background: action.bg }}
+            style={{ ...actionCard, background: action.bg, border: action.border }}
             className="quick-card"
             onClick={() => onNavigate?.(action.key)}
             role="button"
@@ -156,7 +192,13 @@ const HomePage = ({ userName, onNavigate }) => {
             onKeyDown={(e) => e.key === "Enter" && onNavigate?.(action.key)}
           >
             {/* Icon */}
-            <div style={{ ...actionIconWrap, color: action.color }}>
+            <div
+              style={{
+                ...actionIconWrap,
+                color: action.color,
+                background: isDark ? "var(--bg-hover)" : "rgba(255,255,255,0.7)",
+              }}
+            >
               {action.icon}
             </div>
 
@@ -173,7 +215,7 @@ const HomePage = ({ userName, onNavigate }) => {
                   {action.tag}
                 </Tag>
               </div>
-              <Text style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
+              <Text style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
                 {action.description}
               </Text>
             </div>
@@ -195,8 +237,8 @@ const HomePage = ({ userName, onNavigate }) => {
 
       {/* ── Footer note ─────────────────────────────────────── */}
       <div style={footerNote}>
-        <SafetyCertificateOutlined style={{ color: "#94a3b8", fontSize: 14 }} />
-        <Text type="secondary" style={{ fontSize: 12 }}>
+        <SafetyCertificateOutlined style={{ color: "var(--text-muted)", fontSize: 14 }} />
+        <Text type="secondary" style={{ fontSize: 12, color: "var(--text-muted)" }}>
           All activity is logged and monitored.
         </Text>
       </div>
@@ -212,6 +254,7 @@ const pageWrap = {
   flexDirection: "column",
   gap: "24px",
   minHeight: "100%",
+  background: "var(--bg-app)",
 };
 
 // Banner
@@ -297,14 +340,14 @@ const statsGrid = {
 };
 
 const statCard = {
-  background: "#fff",
+  background: "var(--bg-card)",
   borderRadius: "12px",
   padding: "18px 20px",
   display: "flex",
   alignItems: "center",
   gap: "14px",
-  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-  border: "1px solid #f1f5f9",
+  boxShadow: "var(--shadow-sm)",
+  border: "1px solid var(--border-color)",
   transition: "all 0.2s ease",
   cursor: "default",
 };
@@ -324,13 +367,13 @@ const statIcon = {
 const statValue = {
   fontSize: "22px",
   fontWeight: 700,
-  color: "#1e293b",
+  color: "var(--text-primary)",
   lineHeight: 1.2,
 };
 
 const statLabel = {
   fontSize: "12px",
-  color: "#94a3b8",
+  color: "var(--text-muted)",
   fontWeight: 500,
   marginTop: 2,
 };
@@ -341,7 +384,7 @@ const sectionHeader = {
   flexDirection: "column",
   gap: "2px",
   paddingBottom: "4px",
-  borderBottom: "1px solid #f1f5f9",
+  borderBottom: "1px solid var(--border-color)",
 };
 
 // Quick action cards
@@ -359,8 +402,7 @@ const actionCard = {
   gap: "16px",
   cursor: "pointer",
   transition: "all 0.22s ease",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  border: "1px solid rgba(255,255,255,0.8)",
+  boxShadow: "var(--shadow-sm)",
   userSelect: "none",
   outline: "none",
 };
@@ -370,11 +412,10 @@ const actionIconWrap = {
   width: 52,
   height: 52,
   borderRadius: "12px",
-  background: "rgba(255,255,255,0.7)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+  boxShadow: "var(--shadow-sm)",
 };
 
 const actionText = {

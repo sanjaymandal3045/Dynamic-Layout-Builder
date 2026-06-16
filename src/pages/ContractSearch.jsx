@@ -21,8 +21,8 @@ import {
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import ContractDetails from "./ContractDetails";
-import CustomTable from "../components/UI/CustomTable";
-import { useApi } from "../utilities/axiosApiCall";
+import CustomTable from "../components/ui/CustomTable";
+import { useApi } from "../services/axiosClient";
 
 const { Title, Text } = Typography;
 
@@ -157,6 +157,11 @@ const ContractSearch = () => {
         });
         if (res?.data?.attributes) {
           setSelectedContract(res.data.attributes);
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+            document.body.scrollTo({ top: 0, behavior: "smooth" });
+          }, 100);
         } else {
           messageApi.error("Failed to load contract details");
         }

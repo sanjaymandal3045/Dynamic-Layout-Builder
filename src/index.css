@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ── Theme Definitions ── */
 :root {
   line-height: 1.5;
   font-weight: 400;
@@ -8,17 +9,147 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Light Theme Variables */
+  --bg-app: #f4f6fa;
+  --bg-container: #ffffff;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-header: #ffffff;
+  --bg-footer: #f4f6fa;
+  --bg-hover: #f1f5f9;
+  --bg-header-rgba: rgba(255, 255, 255, 0.85);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  
+  --border-color: #e2e8f0;
+  --border-secondary: #f1f5f9;
+  
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.05);
+  
+  --accent-gradient-start: #6366f1;
+  --accent-gradient-end: #0d9488;
+  
+  --section-header-bg: linear-gradient(90deg, #f1f1f1 0%, #d8e3f9 75%);
+  --quick-action-card-bg: rgba(255, 255, 255, 0.8);
+  
+  /* Overlay & UI Component Colors */
+  --bg-overlay-light: rgba(255, 255, 255, 0.4);
+  --bg-overlay-heavy: rgba(255, 255, 255, 0.85);
+  
+  --primary-color: #0d9488;
+  --primary-color-track: rgba(13, 148, 136, 0.1);
+  --primary-color-glow: rgba(13, 148, 136, 0.1);
+  
+  --color-error: #dc2626;
+  --color-error-bg: rgba(220, 38, 38, 0.08);
+  --color-error-border: rgba(220, 38, 38, 0.3);
+  --color-error-hover-bg: rgba(220, 38, 38, 0.18);
+  --color-error-glow: rgba(220, 38, 38, 0.12);
+  --color-error-track: rgba(220, 38, 38, 0.15);
+
+  /* Menu Selection Colors */
+  --menu-selected-bg: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(13, 148, 136, 0.02) 100%);
+  --menu-selected-color: #0d9488;
+  --menu-selected-shadow: 0 4px 12px rgba(13, 148, 136, 0.05);
+  --menu-selected-indicator: #0d9488;
+  --menu-hover-icon-color: #0d9488;
 }
 
+[data-theme='dark'] {
+  /* Dark Theme Variables - Optimized for appealing elevation and hierarchy */
+  --bg-app: #0e121e;          /* Deeper dark background for enhanced contrast */
+  --bg-container: #151c2c;   /* Slate navy containers */
+  --bg-card: #20293d;        /* Cards stand out from containers */
+  --bg-sidebar: #151c2c;     /* Clear dark sidebar */
+  --bg-header: #151c2c;      /* Clean header */
+  --bg-footer: #0e121e;      /* Blends with app background */
+  --bg-hover: #26334e;       /* Appealing hover backdrop */
+  --bg-header-rgba: rgba(21, 28, 44, 0.85);
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  --border-color: #242f47;   /* Slate navy borders for premium definition */
+  --border-secondary: #1d2536;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  
+  --accent-gradient-start: #818cf8;
+  --accent-gradient-end: #14b8a6;
+  
+  --section-header-bg: linear-gradient(90deg, #151c2c 0%, #101522 75%);
+  --quick-action-card-bg: rgba(30, 41, 59, 0.8);
+  
+  /* Overlay & UI Component Colors */
+  --bg-overlay-light: rgba(14, 18, 30, 0.5);
+  --bg-overlay-heavy: rgba(21, 28, 44, 0.9);
+  
+  --primary-color: #14b8a6;
+  --primary-color-track: rgba(20, 184, 166, 0.15);
+  --primary-color-glow: rgba(20, 184, 166, 0.15);
+  
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.1);
+  --color-error-border: rgba(248, 113, 113, 0.35);
+  --color-error-hover-bg: rgba(248, 113, 113, 0.22);
+  --color-error-glow: rgba(248, 113, 113, 0.15);
+  --color-error-track: rgba(248, 113, 113, 0.18);
+
+  /* Menu Selection Colors */
+  --menu-selected-bg: linear-gradient(135deg, rgba(20, 184, 166, 0.14) 0%, rgba(20, 184, 166, 0.03) 100%);
+  --menu-selected-color: #14b8a6;
+  --menu-selected-shadow: 0 4px 16px rgba(20, 184, 166, 0.1);
+  --menu-selected-indicator: #14b8a6;
+  --menu-hover-icon-color: #14b8a6;
+}
+
+/* ── Base Styles ── */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-
   font-family: "Inter", sans-serif;
-  background-color: #f8f9fa;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
 }
 
+html,
+body {
+  overflow-x: hidden; /* Hide horizontal scrollbar */
+  max-width: 100vw; /* Prevent viewport overflow */
+}
+
+body {
+  overflow-y: scroll;
+}
+
+/* ── Transitions ── */
+body, 
+.content-wrapper,
+.content-inner,
+.modern-sidebar,
+.ant-layout,
+.ant-layout-header,
+.ant-layout-sider,
+.ant-layout-footer,
+.ant-tabs-nav,
+.ant-card,
+.stat-card,
+.quick-card,
+.modern-menu .ant-menu-item,
+.modern-menu .ant-menu-submenu-title {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease !important;
+}
+
+/* ── Logo Animation ── */
 .bank-logo {
   animation: spinHorizontal 8s infinite linear;
 }
@@ -33,58 +164,121 @@ body {
 }
 
 .ant-spin-text {
-  padding-top: 40px !important; /* Adjust this value for more/less gap */
+  padding-top: 40px !important;
   color: #0d9488;
 }
 
-html,
-body {
-  overflow-x: hidden; /* Hide horizontal scrollbar */
-  max-width: 100vw; /* Prevent viewport overflow */
-}
-
-/* html {
-  overflow-y: scroll;
-  scrollbar-gutter: stable;
-} */
-
-body {
-  overflow-y: scroll;
-}
-
+/* ── Scrollbars ── */
 .modern-sidebar::-webkit-scrollbar {
   width: 6px;
+  color: red;
 }
 .modern-sidebar::-webkit-scrollbar-track {
   background: transparent;
 }
 .modern-sidebar::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--border-color);
   border-radius: 3px;
 }
 .modern-sidebar::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--text-muted);
 }
-.modern-menu .ant-menu-item {
-  border-radius: 6px;
-  margin: 2px 8px;
-  transition: all 0.2s ease;
+
+/* ── Premium Sidebar & Menu Styling ── */
+.modern-sidebar {
+  border-right: 1px solid #242f47 !important;
+  background: #151c2c !important;
 }
-.modern-menu .ant-menu-item:hover {
-  background-color: #f3f4f6;
+
+.modern-menu {
+  background: transparent !important;
+  border-right: none !important;
+  padding: 12px 0 !important;
 }
-.modern-menu .ant-menu-item-selected {
-  background-color: #eff6ff !important;
-  color: #2563eb;
-  font-weight: 500;
-}
+
+.modern-menu .ant-menu-item,
 .modern-menu .ant-menu-submenu-title {
-  border-radius: 6px;
-  margin: 2px 8px;
-  transition: all 0.2s ease;
+  border-radius: 10px !important;
+  margin: 6px 12px !important;
+  width: calc(100% - 24px) !important;
+  color: #94a3b8 !important;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
+/* Icon colors */
+.modern-menu .ant-menu-item .ant-menu-item-icon,
+.modern-menu .ant-menu-submenu-title .ant-menu-item-icon {
+  color: #64748b;
+  transition: color 0.25s ease;
+  font-size: 16px;
+}
+
+/* Hover State */
+.modern-menu .ant-menu-item:hover,
 .modern-menu .ant-menu-submenu-title:hover {
-  background-color: #f3f4f6;
+  background: #26334e !important;
+  color: #f8fafc !important;
+  transform: translateX(6px);
+}
+
+.modern-menu .ant-menu-item:hover .ant-menu-item-icon,
+.modern-menu .ant-menu-submenu-title:hover .ant-menu-item-icon {
+  color: #14b8a6 !important;
+}
+
+/* Active/Selected State */
+.modern-menu .ant-menu-item-selected {
+  background: var(--menu-selected-bg) !important;
+  color: var(--menu-selected-color) !important;
+  font-weight: 600 !important;
+  box-shadow: var(--menu-selected-shadow) !important;
+  position: relative;
+}
+
+.modern-menu .ant-menu-item-selected .ant-menu-item-icon {
+  color: var(--menu-selected-color) !important;
+}
+
+/* Subtle accent line on selected item */
+.modern-menu .ant-menu-item-selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 50%;
+  width: 4px;
+  background: var(--menu-selected-indicator);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 1px 0 8px var(--menu-selected-indicator);
+}
+
+/* Theme Toggle Button Enhancement */
+.theme-toggle-btn {
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-container) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.theme-toggle-btn:hover {
+  transform: rotate(15deg) scale(1.05);
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Group titles */
+.modern-menu .ant-menu-item-group-title {
+  color: #64748b !important;
+  font-size: 11px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 16px;
+  padding-left: 20px !important;
+  font-weight: 700;
 }
 
 /* Ensure content wrapper maintains height during transitions */
@@ -98,4 +292,45 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+/* Custom dark overrides for Ant Design */
+[data-theme='dark'] .ant-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme='dark'] .ant-tabs {
+  color: var(--text-primary) !important;
+}
+
+[data-theme='dark'] .ant-tabs-tab {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme='dark'] .ant-tabs-tab-active {
+  color: var(--primary-color) !important;
+}
+
+[data-theme='dark'] .ant-tabs-ink-bar {
+  background: var(--primary-color) !important;
+}
+
+[data-theme='dark'] .ant-table {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme='dark'] .ant-table-thead > tr > th {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+[data-theme='dark'] .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+[data-theme='dark'] .ant-table-tbody > tr:hover > td {
+  background: var(--bg-hover) !important;
 }

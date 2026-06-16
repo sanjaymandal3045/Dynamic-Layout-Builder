@@ -10,8 +10,9 @@ import {
   EnterOutlined,
   TableOutlined,
   CheckSquareOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
-import { COMPONENT_TYPES } from "../../utilities/constants";
+import { COMPONENT_TYPES } from "../../utils/constants";
 import ComponentItem from "./ComponentItem";
 import { MenuIcon } from "lucide-react";
 import { v7 as uuidv7 } from "uuid";
@@ -26,6 +27,7 @@ const TYPE_ICONS = {
   select: <MenuIcon />,
   table: <TableOutlined />,
   checkbox: <CheckSquareOutlined />,
+  upload: <UploadOutlined />,
 };
 
 const ComponentsList = ({
@@ -142,6 +144,17 @@ const ComponentsList = ({
         required: false,
         controlString: "111",
       },
+      upload: {
+        id,
+        type,
+        name: `upload_${id}`,
+        label: "File Upload",
+        uploadFormat: "BLOB", // "BLOB" or "Base64"
+        maxCount: 1,
+        accept: "",
+        required: false,
+        controlString: "111",
+      },
     };
 
     onAddComponent(componentTemplates[type]);
@@ -154,11 +167,20 @@ const ComponentsList = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div 
+      className="rounded-xl border shadow-sm overflow-hidden"
+      style={{
+        background: "var(--bg-card)",
+        borderColor: "var(--border-color)",
+      }}
+    >
       {/* Component List */}
-      <div className="p-4 bg-slate-50/50">
+      <div 
+        className="p-4"
+        style={{ background: "var(--bg-app)" }}
+      >
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>
             Section Content
           </span>
           <Tag color="blue" className="mr-0 rounded-full px-2 text-[10px]">
@@ -180,8 +202,11 @@ const ComponentsList = ({
               />
             ))
           ) : (
-            <div className="py-2 text-center border-2 border-dashed border-slate-200 rounded-lg">
-              <p className="text-slate-400 text-xs">
+            <div 
+              className="py-2 text-center border-2 border-dashed rounded-lg"
+              style={{ borderColor: "var(--border-color)" }}
+            >
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 No components yet. Add one below.
               </p>
             </div>
@@ -189,11 +214,11 @@ const ComponentsList = ({
         </div>
       </div>
 
-      <Divider style={{ margin: "6px" }} />
+      <Divider style={{ margin: "6px", borderColor: "var(--border-color)" }} />
 
       {/* Action Area */}
-      <div className="p-2 bg-white">
-        <p className="text-[11px] font-medium text-slate-400 mb-3 uppercase tracking-tight">
+      <div className="p-2" style={{ background: "var(--bg-card)" }}>
+        <p className="text-[11px] font-medium mb-3 uppercase tracking-tight" style={{ color: "var(--text-muted)" }}>
           Add Components
         </p>
         <div className="grid grid-cols-4 gap-2">
@@ -204,12 +229,25 @@ const ComponentsList = ({
                 <button
                   type="button"
                   onClick={() => addComponent(type)}
-                  className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border border-slate-100 bg-white hover:border-blue-400 hover:text-blue-600 hover:shadow-md hover:shadow-blue-500/10 transition-all group"
+                  className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border transition-all group"
+                  style={{
+                    background: "var(--bg-app)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-primary)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--accent-gradient-end)";
+                    e.currentTarget.style.color = "var(--accent-gradient-end)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border-color)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }}
                 >
-                  <span className="text-lg text-slate-400 group-hover:text-blue-500 transition-colors">
+                  <span className="text-lg transition-colors" style={{ color: "inherit" }}>
                     {TYPE_ICONS[type] || <PlusOutlined />}
                   </span>
-                  <span className="capitalize text-[10px] font-medium">
+                  <span className="capitalize text-[10px] font-medium" style={{ color: "inherit" }}>
                     {type}
                   </span>
                 </button>

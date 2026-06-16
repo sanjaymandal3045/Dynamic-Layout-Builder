@@ -164,7 +164,7 @@ const LayoutBuilder = () => {
             label: <EditableTabLabel tab={tab} />,
             children: (
               <div
-                style={{ background: "#f3f5f7", padding: 20, borderRadius: 8 }}
+                style={{ background: "var(--bg-app)", padding: 20, borderRadius: 8 }}
               >
                 <SectionsList
                   sections={tab.sections}

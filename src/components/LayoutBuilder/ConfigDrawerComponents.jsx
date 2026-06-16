@@ -18,6 +18,39 @@ export const SUBSERVICE_OPTIONS = [
   { label: "Service 5", value: 5 },
   { label: "Service 6", value: 6 },
   { label: "Service 7", value: 7 },
+  { label: "Service 8", value: 8 },
+  { label: "Service 9", value: 9 },
+  { label: "Service 10", value: 10 },
+  { label: "Service 11", value: 11 },
+  { label: "Service 12", value: 12 },
+  { label: "Service 13", value: 13 },
+  { label: "Service 14", value: 14 },
+  { label: "Service 15", value: 15 },
+  { label: "Service 16", value: 16 },
+  { label: "Service 17", value: 17 },
+  { label: "Service 18", value: 18 },
+  { label: "Service 19", value: 19 },
+  { label: "Service 20", value: 20 },
+  { label: "Service 21", value: 21 },
+  { label: "Service 22", value: 22 },
+  { label: "Service 23", value: 23 },
+  { label: "Service 24", value: 24 },
+  { label: "Service 25", value: 25 },
+  { label: "Service 26", value: 26 },
+  { label: "Service 27", value: 27 },
+  { label: "Service 28", value: 28 },
+  { label: "Service 29", value: 29 },
+  { label: "Service 30", value: 30 },
+  { label: "Service 31", value: 31 },
+  { label: "Service 32", value: 32 },
+  { label: "Service 33", value: 33 },
+  { label: "Service 34", value: 34 },
+  { label: "Service 35", value: 35 },
+  { label: "Service 36", value: 36 },
+  { label: "Service 37", value: 37 },
+  { label: "Service 38", value: 38 },
+  { label: "Service 39", value: 39 },
+  { label: "Service 40", value: 40 },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -64,7 +97,11 @@ export const ApiCommonFields = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <FormField label="Sub Channel ID" required={required} error={channelError}>
+      <FormField
+        label="Sub Channel ID"
+        required={required}
+        error={channelError}
+      >
         <Select
           status={channelError ? "error" : ""}
           popupMatchSelectWidth={false}
@@ -77,7 +114,11 @@ export const ApiCommonFields = ({
         />
       </FormField>
 
-      <FormField label="Sub Service ID" required={required} error={serviceError}>
+      <FormField
+        label="Sub Service ID"
+        required={required}
+        error={serviceError}
+      >
         <Select
           status={serviceError ? "error" : ""}
           popupMatchSelectWidth={false}
@@ -101,11 +142,13 @@ export const ApiCommonFields = ({
 const MAPPING_THEMES = {
   blue: {
     row: "p-3 bg-white rounded border border-slate-200 hover:border-blue-300 space-y-2 transition-colors",
-    badge: "text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded",
+    badge:
+      "text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded",
   },
   green: {
     row: "p-3 bg-green-50 rounded border border-green-200 hover:border-green-400 space-y-2 transition-colors",
-    badge: "text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded",
+    badge:
+      "text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded",
   },
   purple: {
     row: "p-2 bg-white rounded border border-purple-200 space-y-1",
@@ -125,7 +168,10 @@ export const FieldMappingsList = ({
   const showHints = theme !== "purple";
 
   const add = () =>
-    onChange([...mappings, { id: Date.now(), apiResponseField: "", targetFieldName: "" }]);
+    onChange([
+      ...mappings,
+      { id: Date.now(), apiResponseField: "", targetFieldName: "" },
+    ]);
   const remove = (i) => onChange(mappings.filter((_, idx) => idx !== i));
   const update = (i, key, val) =>
     onChange(mappings.map((m, idx) => (idx === i ? { ...m, [key]: val } : m)));
@@ -136,7 +182,12 @@ export const FieldMappingsList = ({
         <label className="text-xs font-semibold text-slate-700">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
-        <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={add}>
+        <Button
+          type="dashed"
+          size="small"
+          icon={<PlusOutlined />}
+          onClick={add}
+        >
           Add Mapping
         </Button>
       </div>
@@ -227,7 +278,12 @@ export const HeaderCardsBuilder = ({ cards = [], onChange }) => {
         <label className="text-[10px] font-bold text-slate-500 uppercase">
           Header Cards
         </label>
-        <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={add}>
+        <Button
+          type="dashed"
+          size="small"
+          icon={<PlusOutlined />}
+          onClick={add}
+        >
           Add Card
         </Button>
       </div>
@@ -305,7 +361,8 @@ export const ViewDetailsConfigBuilder = ({
     }
   };
 
-  const jsonValue = configText ?? (config ? JSON.stringify(config, null, 2) : "");
+  const jsonValue =
+    configText ?? (config ? JSON.stringify(config, null, 2) : "");
 
   return (
     <div>
@@ -322,7 +379,10 @@ export const ViewDetailsConfigBuilder = ({
             onChange={(e) => updateTitle(e.target.value)}
           />
         </div>
-        <HeaderCardsBuilder cards={config?.headerCards || []} onChange={updateCards} />
+        <HeaderCardsBuilder
+          cards={config?.headerCards || []}
+          onChange={updateCards}
+        />
       </div>
 
       {/* Raw JSON editor */}
@@ -366,7 +426,12 @@ export const FilterSearchOptionsBuilder = ({ options = [], onChange }) => {
         <label className="text-xs font-semibold text-slate-700">
           Search Options
         </label>
-        <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={add}>
+        <Button
+          type="dashed"
+          size="small"
+          icon={<PlusOutlined />}
+          onClick={add}
+        >
           Add Option
         </Button>
       </div>
@@ -408,7 +473,8 @@ export const FilterSearchOptionsBuilder = ({ options = [], onChange }) => {
 
       {options.length > 0 && (
         <p className="text-[10px] text-slate-400 mt-1">
-          &quot;Label&quot; is shown to end-users. &quot;Key&quot; is sent as the attribute name in the API payload.
+          &quot;Label&quot; is shown to end-users. &quot;Key&quot; is sent as
+          the attribute name in the API payload.
         </p>
       )}
     </div>
