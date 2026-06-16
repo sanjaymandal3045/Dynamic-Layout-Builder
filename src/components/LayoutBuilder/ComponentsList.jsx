@@ -12,7 +12,7 @@ import {
   CheckSquareOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import { COMPONENT_TYPES } from "../../utilities/constants";
+import { COMPONENT_TYPES } from "../../utils/constants";
 import ComponentItem from "./ComponentItem";
 import { MenuIcon } from "lucide-react";
 import { v7 as uuidv7 } from "uuid";

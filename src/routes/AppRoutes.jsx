@@ -6,11 +6,11 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 
 // Local Import
 import Login from "@/pages/Login";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/routes/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
-import { restoreAuthState, logoutUser } from "@/redux/slices/authSlice";
-import { initializeAxiosInterceptors, isTokenValid } from "@/utilities/axiosApiCall";
-import SplashScreen from "../components/UI/SplashScreen";
+import { restoreAuthState } from "@/redux/slices/authSlice";
+import { initializeAxiosInterceptors } from "@/services/axiosClient";
+import SplashScreen from "../components/ui/SplashScreen";
 
 function AppRoutes() {
   const dispatch = useDispatch();
@@ -23,33 +23,12 @@ function AppRoutes() {
     document.documentElement.setAttribute("data-theme", themeMode);
   }, [themeMode]);
 
-  // Restore auth state from localStorage on app load
+  // On app load: wire up axios interceptors and restore auth state from localStorage.
+  // We do NOT eagerly validate the access token here — if it's expired, the axios
+  // interceptor will silently refresh it on the first API call using the refresh token.
   useEffect(() => {
-    console.log("AppRoutes mounted - initializing authentication");
-
-    // Initialize axios interceptors with Redux dispatch
-    // This ensures that 401 errors will properly dispatch logoutUser action
     initializeAxiosInterceptors(dispatch);
-
-    const timer = setTimeout(() => {
-      // First, restore auth state from localStorage
-      dispatch(restoreAuthState());
-
-      // Then validate the token
-      const hasValidToken = isTokenValid();
-      console.log("Token validation on app startup:", {
-        hasToken: !!localStorage.getItem("accessToken"),
-        isValid: hasValidToken,
-      });
-
-      // If localStorage has auth data but token is invalid, logout
-      if (localStorage.getItem("accessToken") && !hasValidToken) {
-        console.log("Token found but invalid - logging out");
-        dispatch(logoutUser());
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
+    dispatch(restoreAuthState());
   }, [dispatch]);
 
   const routesNode = initializing ? (

@@ -5,15 +5,16 @@ import { useSelector } from "react-redux";
 
 // Local Import
 import AppShell from "../layouts/AppShell";
-import { useApi } from "../utilities/axiosApiCall";
-import { buildMenuTree } from "../utilities/common";
+import { useApi } from "../services/axiosClient";
+import { buildMenuTree } from "../utils/common";
 import LayoutBuilder from "../components/LayoutBuilder/LayoutBuilder";
 import DynamicPageLoader from "../components/DynamicPageLoader";
 import ContractSearch from "./ContractSearch";
 import HomePage from "./HomePage";
+import ModelRun from "./ModelRun";
 
 const Dashboard = () => {
-  const [selectedKey, setSelectedKey] = useState("home");
+  const [selectedKey, setSelectedKey] = useState("model-run");
   const [menuItems, setMenuItems] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const getMenuListApi = useApi();
@@ -53,6 +54,9 @@ const Dashboard = () => {
     }
     if (selectedKey === "contract-search") {
       return <ContractSearch />;
+    }
+    if (selectedKey === "model-run") {
+      return <ModelRun />;
     }
     return <DynamicPageLoader pageKey={selectedKey} />;
   };

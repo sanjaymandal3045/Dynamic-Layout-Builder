@@ -4,7 +4,7 @@ import {
   CopyOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
-import { downloadJSON } from "../../utilities/common";
+import { downloadJSON } from "../../utils/common";
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { setConfig } from "../../redux/slices/layoutSlice";

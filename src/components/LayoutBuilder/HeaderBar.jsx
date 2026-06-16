@@ -14,7 +14,7 @@ import {
   SettingOutlined,
   CloudUploadOutlined,
 } from "@ant-design/icons";
-import { useApi } from "../../utilities/axiosApiCall";
+import { useApi } from "../../services/axiosClient";
 
 const { Title, Text } = Typography;
 

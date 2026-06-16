@@ -50,7 +50,9 @@ const CustomTable = memo(
     const themeMode = useSelector((state) => state.theme?.mode);
     const isDark = themeMode === "dark";
 
-    const resolvedPrimary = isDark ? "var(--accent-gradient-end)" : primaryColor;
+    const resolvedPrimary = isDark
+      ? "var(--accent-gradient-end)"
+      : primaryColor;
     const resolvedSecondary = isDark ? "var(--bg-hover)" : secondaryColor;
 
     // ── Version key ──────────────────────────────────────────────────────────
@@ -108,8 +110,12 @@ const CustomTable = memo(
 
     // ── Row class names ──────────────────────────────────────────────────────
     const getRowClassName = (record, index) => {
-      const stripe = stripedRows ? (index % 2 === 0 ? "ct-even" : "ct-odd") : "";
-      const custom = rowClassName ? rowClassName(record, index) ?? "" : "";
+      const stripe = stripedRows
+        ? index % 2 === 0
+          ? "ct-even"
+          : "ct-odd"
+        : "";
+      const custom = rowClassName ? (rowClassName(record, index) ?? "") : "";
       // animClass drives the entrance animation; stripe handles colouring
       return `${animClass} ${stripe} ${custom}`.trim();
     };
@@ -143,7 +149,8 @@ const CustomTable = memo(
               color: "var(--text-primary)",
               ...(highlightFirstColumn &&
                 idx === 0 && {
-                  backgroundColor: rowIdx % 2 === 0 ? "var(--bg-card)" : "var(--bg-app)",
+                  backgroundColor:
+                    rowIdx % 2 === 0 ? "var(--bg-card)" : "var(--bg-app)",
                   fontWeight: 500,
                 }),
               ...customRowStyle,

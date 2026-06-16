@@ -49,6 +49,7 @@ const AppShell = ({
   const navigate = useNavigate();
 
   const userName = useSelector((state) => state.auth.fullName);
+  const employeeId = useSelector((state) => state.auth.employeeId);
   const themeMode = useSelector((state) => state.theme.mode);
 
   const handleToggleTheme = () => {
@@ -79,7 +80,7 @@ const AppShell = ({
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
-          theme={themeMode === "dark" ? "dark" : "light"}
+          theme="dark"
           width={SIDER_WIDTH}
           collapsedWidth={SIDER_COLLAPSED_WIDTH}
           style={{
@@ -90,7 +91,7 @@ const AppShell = ({
             top: 0,
             bottom: 0,
             boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
-            background: "var(--bg-sidebar)",
+            background: "#151c2c",
             zIndex: 100,
           }}
           breakpoint="lg"
@@ -104,8 +105,8 @@ const AppShell = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              borderBottom: "1px solid var(--border-color)",
-              background: "var(--bg-sidebar)",
+              borderBottom: "1px solid #242f47",
+              background: "#151c2c",
               overflow: "hidden",
               transition: "all 0.3s",
             }}
@@ -122,9 +123,14 @@ const AppShell = ({
                 />
                 <Title
                   level={5}
-                  style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}
+                  style={{
+                    margin: 0,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: "#f8fafc",
+                  }}
                 >
-                  RBS Portal
+                  DBBL CDR Portal
                 </Title>
               </Space>
             ) : (
@@ -161,7 +167,7 @@ const AppShell = ({
             </div>
           ) : (
             <Menu
-              theme={themeMode === "dark" ? "dark" : "light"}
+              theme="dark"
               selectedKeys={[selectedKey]}
               mode="inline"
               items={menuItems}
@@ -170,7 +176,7 @@ const AppShell = ({
                 borderRight: 0,
                 fontSize: 13.5,
                 padding: "8px 0",
-                background: "var(--bg-sidebar)",
+                background: "#151c2c",
               }}
               className="modern-menu"
             />
@@ -236,7 +242,9 @@ const AppShell = ({
                 color: themeMode === "dark" ? "#fbbf24" : "#475569",
               }}
               className="theme-toggle-btn"
-              icon={themeMode === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              icon={
+                themeMode === "dark" ? <Sun size={18} /> : <Moon size={18} />
+              }
             />
 
             {/* Edit config shortcut */}
@@ -252,8 +260,11 @@ const AppShell = ({
             <Space size={20}>
               <Space size={10}>
                 <Avatar size={36} icon={<UserOutlined />} />
-                <Text strong style={{ fontSize: 14, color: "var(--text-primary)" }}>
-                  {userName || ""}
+                <Text
+                  strong
+                  style={{ fontSize: 14, color: "var(--text-primary)" }}
+                >
+                  {userName || employeeId || "User"}
                 </Text>
               </Space>
               <Button
@@ -315,9 +326,12 @@ const AppShell = ({
               borderTop: "1px solid var(--border-color)",
             }}
           >
-            <Text type="secondary" style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              DBBL Common Data Repository © {new Date().getFullYear()} • IT Development
-              Division
+            <Text
+              type="secondary"
+              style={{ fontSize: 12, color: "var(--text-muted)" }}
+            >
+              DBBL Common Data Repository © {new Date().getFullYear()} • IT
+              Development Division
             </Text>
           </div>
         </Layout>

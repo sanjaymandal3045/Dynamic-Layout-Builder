@@ -21,8 +21,8 @@ import {
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import ContractDetails from "./ContractDetails";
-import CustomTable from "../components/UI/CustomTable";
-import { useApi } from "../utilities/axiosApiCall";
+import CustomTable from "../components/ui/CustomTable";
+import { useApi } from "../services/axiosClient";
 
 const { Title, Text } = Typography;
 

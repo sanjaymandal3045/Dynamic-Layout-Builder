@@ -15,7 +15,7 @@ const { Title, Text } = Typography;
 
 // LOCAL IMPORT
 import { loginUser } from "@/redux/slices/authSlice";
-import { useApi } from "@/utilities/axiosApiCall";
+import { useApi } from "@/services/axiosClient";
 import dbblLogo from "@/assets/dbbl_logo.png";
 
 const Login = () => {
@@ -362,11 +362,11 @@ const Login = () => {
                     icon={!isSubmitting && <ArrowRightOutlined />}
                     className="rounded-lg font-semibold h-11 text-base bg-teal-600 border-none hover:bg-teal-700 hover:shadow-lg transition-all duration-200"
                     iconPosition="end"
-                    disabled={
-                      isSubmitting ||
-                      connectionTestApi.loading ||
-                      connectionStatus === "error"
-                    }
+                    // disabled={
+                    //   isSubmitting ||
+                    //   connectionTestApi.loading ||
+                    //   connectionStatus === "error"
+                    // }
                   >
                     {isSubmitting ? "Signing in..." : "Sign In"}
                   </Button>

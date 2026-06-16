@@ -171,6 +171,7 @@ body,
 /* ── Scrollbars ── */
 .modern-sidebar::-webkit-scrollbar {
   width: 6px;
+  color: red;
 }
 .modern-sidebar::-webkit-scrollbar-track {
   background: transparent;
@@ -185,8 +186,8 @@ body,
 
 /* ── Premium Sidebar & Menu Styling ── */
 .modern-sidebar {
-  border-right: 1px solid var(--border-color) !important;
-  background: var(--bg-sidebar) !important;
+  border-right: 1px solid #242f47 !important;
+  background: #151c2c !important;
 }
 
 .modern-menu {
@@ -200,7 +201,7 @@ body,
   border-radius: 10px !important;
   margin: 6px 12px !important;
   width: calc(100% - 24px) !important;
-  color: var(--text-secondary) !important;
+  color: #94a3b8 !important;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -210,7 +211,7 @@ body,
 /* Icon colors */
 .modern-menu .ant-menu-item .ant-menu-item-icon,
 .modern-menu .ant-menu-submenu-title .ant-menu-item-icon {
-  color: var(--text-muted);
+  color: #64748b;
   transition: color 0.25s ease;
   font-size: 16px;
 }
@@ -218,14 +219,14 @@ body,
 /* Hover State */
 .modern-menu .ant-menu-item:hover,
 .modern-menu .ant-menu-submenu-title:hover {
-  background: var(--bg-hover) !important;
-  color: var(--text-primary) !important;
+  background: #26334e !important;
+  color: #f8fafc !important;
   transform: translateX(6px);
 }
 
 .modern-menu .ant-menu-item:hover .ant-menu-item-icon,
 .modern-menu .ant-menu-submenu-title:hover .ant-menu-item-icon {
-  color: var(--menu-hover-icon-color) !important;
+  color: #14b8a6 !important;
 }
 
 /* Active/Selected State */
@@ -271,7 +272,7 @@ body,
 
 /* Group titles */
 .modern-menu .ant-menu-item-group-title {
-  color: var(--text-muted) !important;
+  color: #64748b !important;
   font-size: 11px !important;
   text-transform: uppercase;
   letter-spacing: 0.08em;

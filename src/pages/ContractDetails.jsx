@@ -21,8 +21,8 @@ import {
   SaveOutlined,
   EditOutlined,
 } from "@ant-design/icons";
-import { useFieldPermissions } from "../utilities/userFieldPermissions";
-import { useApi } from "../utilities/axiosApiCall";
+import { useFieldPermissions } from "../utils/userFieldPermissions";
+import { useApi } from "../services/axiosClient";
 
 const ContractDetails = ({ contract }) => {
   const [form] = Form.useForm();

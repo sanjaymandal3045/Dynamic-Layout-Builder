@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { Button, message, Tabs, Badge } from "antd";
-import { ArrowLeft } from "lucide-react";
+import { Button, message, Tabs, Badge, Divider } from "antd";
+import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import ComponentRenderer from "./ComponentRenderer";
-import { useApi } from "../../utilities/axiosApiCall";
+import { useApi } from "../../services/axiosClient";
 
 const getResponsiveGridTemplate = (columns) => {
   const minWidths = { 1: "100%", 2: "360px", 3: "280px", 4: "220px" };
   const minW = minWidths[columns] ?? "180px";
-  return `repeat(auto-fit, minmax(min(${minW}, 100%), 1fr))`;
+  return `repeat(auto-fill, minmax(min(${minW}, 100%), 1fr))`;
 };
 
 const LayoutPreview = ({
@@ -16,6 +16,7 @@ const LayoutPreview = ({
   formValues,
   onValueChange,
   hideBackButton = false,
+  backButtonText = "Back to Editor",
 }) => {
   const [messageApi, contextHolder] = message.useMessage();
   const apiHandler = useApi();
@@ -26,6 +27,14 @@ const LayoutPreview = ({
   const [externalTableData, setExternalTableData] = useState({});
   // Master-detail view state — null = search/list view, object = detail view
   const [detailView, setDetailView] = useState(null); // { config, formValues }
+  const [collapsedSections, setCollapsedSections] = useState({});
+
+  const toggleSection = (sectionId) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   // ── Deep-search a field anywhere in a nested response object ────────────────
   const searchFieldInResponse = (obj, fieldName) => {
@@ -80,7 +89,7 @@ const LayoutPreview = ({
       Object.entries(mappedValues).forEach(([fieldName, fieldValue]) => {
         onValueChange(fieldName, fieldValue);
       });
-      
+
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
         document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
@@ -164,7 +173,7 @@ const LayoutPreview = ({
             config: ra.viewDetailsConfig,
             formValues: detailFormValues,
           });
-          
+
           setTimeout(() => {
             window.scrollTo({ top: 0, behavior: "smooth" });
             document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
@@ -175,13 +184,13 @@ const LayoutPreview = ({
           Object.entries(resolvedValues).forEach(([k, v]) =>
             onValueChange(k, v),
           );
-          
+
           setTimeout(() => {
             window.scrollTo({ top: 0, behavior: "smooth" });
             document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
             document.body.scrollTo({ top: 0, behavior: "smooth" });
           }, 100);
-          
+
           if (populated > 0) {
             messageApi.success(
               `${populated} field${populated > 1 ? "s" : ""} populated from details.`,
@@ -526,26 +535,6 @@ const LayoutPreview = ({
           .lp-detail-enter { animation: slideInFromRight 0.32s cubic-bezier(0.22,1,0.36,1) both; }
         `}</style>
         <div style={{ padding: "20px" }} className="lp-detail-enter">
-          <button
-            onClick={() => setDetailView(null)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              // marginBottom: 18,
-              padding: "7px 16px",
-              borderRadius: 8,
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-card)",
-              color: "var(--text-secondary)",
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow: "var(--shadow-sm)",
-            }}
-          >
-            <ArrowLeft size={14} /> Back
-          </button>
           <LayoutPreview
             config={detailView.config}
             formValues={detailView.formValues}
@@ -555,7 +544,8 @@ const LayoutPreview = ({
                 formValues: { ...prev.formValues, [name]: val },
               }))
             }
-            hideBackButton
+            onBack={() => setDetailView(null)}
+            backButtonText="Back"
           />
         </div>
       </>
@@ -563,166 +553,240 @@ const LayoutPreview = ({
   }
 
   // ── Section renderer ─────────────────────────────────────────────────────────
-  const renderSection = (section) => (
-    <div key={section.id} style={sectionCard}>
-      {/* Section header */}
-      <div style={sectionHeaderBar}>
-        <div style={sectionAccent} />
-        <h3 style={sectionTitle}>{section.name}</h3>
-      </div>
+  const renderSection = (section) => {
+    const isCollapsed = collapsedSections[section.id];
 
-      {/* Components */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: `${section.layout.gutter ?? 12}px`,
-          padding: "12px 10px 12px 10px",
-          backgroundColor: "var(--bg-app)",
-        }}
-      >
-        {section.components.map((c, index) => {
-          // ── Buttons — grouped and centred ──────────────────────────────────
-          if (c.type === "button") {
-            const prev = index > 0 ? section.components[index - 1] : null;
-            if (!prev || prev.type !== "button") {
-              const group = [];
-              for (let i = index; i < section.components.length; i++) {
-                if (section.components[i].type !== "button") break;
-                group.push(section.components[i]);
-              }
-              if (group[0].id === c.id) {
-                return (
-                  <div
-                    key={`btn-group-${index}`}
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      flexWrap: "wrap",
-                      gap: `${section.layout.gutter ?? 12}px`,
-                      paddingTop: 8,
-                    }}
-                  >
-                    {group.map((btnComp) => (
-                      <ComponentRenderer
-                        key={btnComp.id}
-                        component={btnComp}
-                        value={formValues[btnComp.name]}
-                        onValueChange={onValueChange}
-                        onBtnClick={() => handleAction(section, btnComp)}
-                        onFilterSearch={(attrs) =>
-                          handleFilterSearch(section, btnComp, attrs)
-                        }
-                        onRowAction={handleTableRowAction}
-                        onViewDetails={handleViewDetails}
-                        externalData={externalTableData[btnComp.name]}
-                        disabled={isSubmitting}
-                      />
-                    ))}
-                  </div>
-                );
-              }
-            }
-            return null;
-          }
+    return (
+      <div key={section.id} style={sectionCard}>
+        {/* Section header */}
+        <div
+          style={sectionHeaderBar}
+          onClick={() => toggleSection(section.id)}
+          className="section-header-hover"
+        >
+          <div style={sectionAccent} />
+          <h3 style={sectionTitle}>{section.name}</h3>
+          {isCollapsed ? (
+            <ChevronRight size={16} color="var(--text-muted)" />
+          ) : (
+            <ChevronDown size={16} color="var(--text-muted)" />
+          )}
+        </div>
 
-          // ── Full-width singletons ─────────────────────────────────────────
-          if (
-            c.type === "divider" ||
-            c.type === "table" ||
-            c.type === "newline"
-          ) {
-            return (
-              <div
-                key={c.id || c.name || `singleton-${c.type}-${index}`}
-                style={{ width: "100%" }}
-              >
-                <ComponentRenderer
-                  component={c}
-                  value={formValues[c.name]}
-                  onValueChange={onValueChange}
-                  onBtnClick={() => handleAction(section, c)}
-                  onFilterSearch={(attrs) =>
-                    handleFilterSearch(section, c, attrs)
+        {/* Components */}
+        {!isCollapsed && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: `6px`,
+              padding: "12px 10px",
+              backgroundColor: "var(--bg-app)",
+            }}
+          >
+            {section.components.map((c, index) => {
+              // ── Buttons — grouped and centred ──────────────────────────────────
+              if (c.type === "button") {
+                const prev = index > 0 ? section.components[index - 1] : null;
+                if (!prev || prev.type !== "button") {
+                  const group = [];
+                  for (let i = index; i < section.components.length; i++) {
+                    if (section.components[i].type !== "button") break;
+                    group.push(section.components[i]);
                   }
-                  onRowAction={handleTableRowAction}
-                  onViewDetails={handleViewDetails}
-                  externalData={externalTableData[c.name]}
-                  refreshTrigger={tableRefreshTriggers[c.name]}
-                  disabled={isSubmitting}
-                />
-              </div>
-            );
-          }
+                  if (group[0].id === c.id) {
+                    // Check if any button in the group is a filterSearch button
+                    const filterBtnIndex = group.findIndex(
+                      (b) => b.filterSearch?.enabled,
+                    );
 
-          // ── Responsive grid group ─────────────────────────────────────────
-          if (
-            c.type !== "divider" &&
-            c.type !== "table" &&
-            c.type !== "newline" &&
-            c.type !== "button"
-          ) {
-            const prev = index > 0 ? section.components[index - 1] : null;
-            const isNewGroup =
-              !prev ||
-              prev.type === "divider" ||
-              prev.type === "table" ||
-              prev.type === "newline" ||
-              prev.type === "button";
+                    if (filterBtnIndex !== -1) {
+                      const filterComp = group[filterBtnIndex];
+                      const otherButtons = group.filter(
+                        (_, idx) => idx !== filterBtnIndex,
+                      );
 
-            if (isNewGroup) {
-              const group = [];
-              for (let i = index; i < section.components.length; i++) {
-                const comp = section.components[i];
-                if (
-                  comp.type === "divider" ||
-                  comp.type === "table" ||
-                  comp.type === "newline" ||
-                  comp.type === "button"
-                )
-                  break;
-                group.push(comp);
+                      const extraNodes = otherButtons.map((btnComp) => (
+                        <ComponentRenderer
+                          key={btnComp.id}
+                          component={btnComp}
+                          value={formValues[btnComp.name]}
+                          onValueChange={onValueChange}
+                          onBtnClick={() => handleAction(section, btnComp)}
+                          onFilterSearch={(attrs) =>
+                            handleFilterSearch(section, btnComp, attrs)
+                          }
+                          onRowAction={handleTableRowAction}
+                          onViewDetails={handleViewDetails}
+                          externalData={externalTableData[btnComp.name]}
+                          disabled={isSubmitting}
+                        />
+                      ));
+
+                      return (
+                        <div
+                          key={`btn-group-${index}`}
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            width: "100%",
+                            paddingTop: 8,
+                          }}
+                        >
+                          <ComponentRenderer
+                            key={filterComp.id}
+                            component={filterComp}
+                            value={formValues[filterComp.name]}
+                            onValueChange={onValueChange}
+                            onBtnClick={() => handleAction(section, filterComp)}
+                            onFilterSearch={(attrs) =>
+                              handleFilterSearch(section, filterComp, attrs)
+                            }
+                            onRowAction={handleTableRowAction}
+                            onViewDetails={handleViewDetails}
+                            externalData={externalTableData[filterComp.name]}
+                            disabled={isSubmitting}
+                            extraNodes={
+                              extraNodes.length > 0 ? extraNodes : null
+                            }
+                          />
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={`btn-group-${index}`}
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          flexWrap: "wrap",
+                          gap: `${section.layout.gutter ?? 12}px`,
+                          paddingTop: 8,
+                        }}
+                      >
+                        {group.map((btnComp) => (
+                          <ComponentRenderer
+                            key={btnComp.id}
+                            component={btnComp}
+                            value={formValues[btnComp.name]}
+                            onValueChange={onValueChange}
+                            onBtnClick={() => handleAction(section, btnComp)}
+                            onFilterSearch={(attrs) =>
+                              handleFilterSearch(section, btnComp, attrs)
+                            }
+                            onRowAction={handleTableRowAction}
+                            onViewDetails={handleViewDetails}
+                            externalData={externalTableData[btnComp.name]}
+                            disabled={isSubmitting}
+                          />
+                        ))}
+                      </div>
+                    );
+                  }
+                }
+                return null;
               }
 
-              if (group[0].id === c.id) {
+              // ── Full-width singletons ─────────────────────────────────────────
+              if (
+                c.type === "divider" ||
+                c.type === "table" ||
+                c.type === "newline"
+              ) {
                 return (
                   <div
-                    key={`grid-${index}`}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: getResponsiveGridTemplate(
-                        section.layout.columns,
-                      ),
-                      gap: `${section.layout.gutter ?? 12}px`,
-                    }}
+                    key={c.id || c.name || `singleton-${c.type}-${index}`}
+                    style={{ width: "100%" }}
                   >
-                    {group.map((gridComp) => (
-                      <ComponentRenderer
-                        key={gridComp.id}
-                        component={gridComp}
-                        value={formValues[gridComp.name]}
-                        onValueChange={onValueChange}
-                        onBtnClick={() => handleAction(section, gridComp)}
-                        onFilterSearch={(attrs) =>
-                          handleFilterSearch(section, gridComp, attrs)
-                        }
-                        onRowAction={handleTableRowAction}
-                        onViewDetails={handleViewDetails}
-                        externalData={externalTableData[gridComp.name]}
-                        disabled={isSubmitting}
-                      />
-                    ))}
+                    <ComponentRenderer
+                      component={c}
+                      value={formValues[c.name]}
+                      onValueChange={onValueChange}
+                      onBtnClick={() => handleAction(section, c)}
+                      onFilterSearch={(attrs) =>
+                        handleFilterSearch(section, c, attrs)
+                      }
+                      onRowAction={handleTableRowAction}
+                      onViewDetails={handleViewDetails}
+                      externalData={externalTableData[c.name]}
+                      refreshTrigger={tableRefreshTriggers[c.name]}
+                      disabled={isSubmitting}
+                    />
                   </div>
                 );
               }
-            }
-          }
 
-          return null;
-        })}
+              // ── Responsive grid group ─────────────────────────────────────────
+              if (
+                c.type !== "divider" &&
+                c.type !== "table" &&
+                c.type !== "newline" &&
+                c.type !== "button"
+              ) {
+                const prev = index > 0 ? section.components[index - 1] : null;
+                const isNewGroup =
+                  !prev ||
+                  prev.type === "divider" ||
+                  prev.type === "table" ||
+                  prev.type === "newline" ||
+                  prev.type === "button";
+
+                if (isNewGroup) {
+                  const group = [];
+                  for (let i = index; i < section.components.length; i++) {
+                    const comp = section.components[i];
+                    if (
+                      comp.type === "divider" ||
+                      comp.type === "table" ||
+                      comp.type === "newline" ||
+                      comp.type === "button"
+                    )
+                      break;
+                    group.push(comp);
+                  }
+
+                  if (group[0].id === c.id) {
+                    return (
+                      <div
+                        key={`grid-${index}`}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: getResponsiveGridTemplate(
+                            section.layout.columns,
+                          ),
+                          gap: `${section.layout.gutter ?? 12}px`,
+                        }}
+                      >
+                        {group.map((gridComp) => (
+                          <ComponentRenderer
+                            key={gridComp.id}
+                            component={gridComp}
+                            value={formValues[gridComp.name]}
+                            onValueChange={onValueChange}
+                            onBtnClick={() => handleAction(section, gridComp)}
+                            onFilterSearch={(attrs) =>
+                              handleFilterSearch(section, gridComp, attrs)
+                            }
+                            onRowAction={handleTableRowAction}
+                            onViewDetails={handleViewDetails}
+                            externalData={externalTableData[gridComp.name]}
+                            disabled={isSubmitting}
+                          />
+                        ))}
+                      </div>
+                    );
+                  }
+                }
+              }
+
+              return null;
+            })}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // ── Tab items ────────────────────────────────────────────────────────────────
   const tabItems = config.tabs.map((tab) => ({
@@ -755,31 +819,47 @@ const LayoutPreview = ({
         .lp-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { color: #0d9488 !important; }
         .lp-tabs .ant-tabs-ink-bar { background: #0d9488; border-radius: 2px; }
         .lp-tabs .ant-tabs-content-holder { padding: 16px 20px 20px; }
+        .section-header-hover:hover { background: var(--bg-hover) !important; }
       `}</style>
 
       <div style={pageWrap}>
-        {/* Back button */}
-        {!hideBackButton && (
-          <Button
-            onClick={onBack}
-            icon={<ArrowLeft size={14} />}
-            disabled={isSubmitting}
-            style={backBtn}
+        {(!hideBackButton || config.title) && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "16px",
+              marginBottom: "0px",
+            }}
           >
-            Back to Editor
-          </Button>
-        )}
+            {/* Back button */}
+            {!hideBackButton && (
+              <Button
+                onClick={onBack}
+                icon={<ArrowLeft size={14} />}
+                disabled={isSubmitting}
+                style={{
+                  ...backBtn,
+                  alignSelf: "flex-start",
+                  marginTop: "0px",
+                }}
+              >
+                {backButtonText}
+              </Button>
+            )}
 
-        {/* Page title */}
-        {config.title && (
-          <div style={pageTitleWrap}>
-            <h1 style={pageTitleStyle}>{config.title}</h1>
-            {config.description && (
-              <p style={pageDescStyle}>{config.description}</p>
+            {/* Page title */}
+            {config.title && (
+              <div style={pageTitleWrap}>
+                <h1 style={pageTitleStyle}>{config.title}</h1>
+                {config.description && (
+                  <p style={pageDescStyle}>{config.description}</p>
+                )}
+              </div>
             )}
           </div>
         )}
-
+        <Divider style={{padding:"0px", margin:"0px"}} />
         {/* Header Cards (Optional) */}
         {config.headerCards && config.headerCards.length > 0 && (
           <div style={{ marginBottom: "8px" }}>
@@ -798,11 +878,20 @@ const LayoutPreview = ({
                     key={idx}
                     className="rounded-2xl p-[2px] bg-gradient-to-br from-green-200 via-cyan-500 to-blue-500 shadow-sm hover:shadow-md transition-all duration-300"
                   >
-                    <div className="rounded-[14px] p-3 h-full flex flex-col justify-center" style={{ background: "var(--bg-card)" }}>
-                      <div className="text-[10px] font-bold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
+                    <div
+                      className="rounded-[14px] p-3 h-full flex flex-col justify-center"
+                      style={{ background: "var(--bg-card)" }}
+                    >
+                      <div
+                        className="text-[10px] font-bold tracking-wide uppercase"
+                        style={{ color: "var(--text-muted)" }}
+                      >
                         {card.label}
                       </div>
-                      <div className="text-[15px] font-bold mt-[2px] truncate" style={{ color: "var(--text-primary)" }}>
+                      <div
+                        className="text-[15px] font-bold mt-[2px] truncate"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         {val !== undefined && val !== null && val !== ""
                           ? String(val)
                           : "-"}
@@ -825,7 +914,6 @@ const LayoutPreview = ({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 16,
                   padding: "4px 2px",
                 }}
               >
@@ -861,8 +949,6 @@ const backBtn = {
   height: 36,
   paddingInline: 16,
   borderRadius: 8,
-  borderColor: "var(--border-color)",
-  background: "var(--bg-card)",
   color: "var(--text-secondary)",
   fontWeight: 500,
 };
@@ -901,6 +987,7 @@ const sectionCard = {
   border: "1px solid var(--border-color)",
   boxShadow: "var(--shadow-sm)",
   overflow: "hidden",
+  marginBottom: "10px",
 };
 
 const sectionHeaderBar = {
@@ -910,6 +997,9 @@ const sectionHeaderBar = {
   padding: "14px 18px",
   borderBottom: "1px solid var(--border-color)",
   background: "var(--section-header-bg)",
+  cursor: "pointer",
+  userSelect: "none",
+  transition: "background 0.2s ease",
 };
 
 const sectionAccent = {

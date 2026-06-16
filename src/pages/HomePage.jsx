@@ -116,7 +116,7 @@ const HomePage = ({ userName, onNavigate }) => {
             👋
           </Text>
           <Title level={2} style={bannerTitle}>
-            Welcome to RBS Portal
+            Welcome to Common Data Repository Portal
           </Title>
           <Text style={bannerSub}>· Dutch-Bangla Bank Limited ·</Text>
         </div>

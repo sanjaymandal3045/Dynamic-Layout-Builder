@@ -34,11 +34,11 @@ const SectionCard = ({
     <Card
       className="border-none shadow-lg transition-all duration-300 overflow-hidden rounded-2xl"
       styles={{ body: { padding: 0 } }}
-      style={{ 
+      style={{
         marginBottom: "32px",
         background: "var(--bg-card)",
         border: "1px solid var(--border-color)",
-        boxShadow: "var(--shadow-md)"
+        boxShadow: "var(--shadow-md)",
       }}
     >
       <div className="flex flex-col">
@@ -49,11 +49,11 @@ const SectionCard = ({
           {/* Header Area */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3 flex-1">
-              <div 
+              <div
                 className="p-2 rounded-lg"
-                style={{ 
-                  background: "var(--bg-hover)", 
-                  color: "var(--accent-gradient-end)" 
+                style={{
+                  background: "var(--bg-hover)",
+                  color: "var(--accent-gradient-end)",
                 }}
               >
                 <LayoutOutlined style={{ fontSize: "20px" }} />
@@ -63,7 +63,10 @@ const SectionCard = ({
                 value={section.name}
                 onChange={(e) => updateSection({ name: e.target.value })}
                 className="text-xl font-bold p-0 border-none transition-colors focus:bg-transparent shadow-none"
-                style={{ background: "transparent", color: "var(--text-primary)" }}
+                style={{
+                  background: "transparent",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
 
@@ -99,7 +102,7 @@ const SectionCard = ({
           </div>
 
           {/* Layout Configuration Section */}
-          <div 
+          <div
             className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-3 rounded-2xl border"
             style={{
               background: "var(--bg-app)",
@@ -107,10 +110,13 @@ const SectionCard = ({
             }}
           >
             <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-secondary)" }}>
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest ml-1"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Grid Columns
               </span>
-              <div 
+              <div
                 className="flex items-center gap-3 p-2 rounded-xl border"
                 style={{
                   background: "var(--bg-card)",
@@ -124,25 +130,31 @@ const SectionCard = ({
                   value={section.layout.columns}
                   onChange={(v) => updateSectionLayout("columns", v)}
                   className="w-full border-none shadow-none"
-                  style={{ background: "transparent", color: "var(--text-primary)" }}
+                  style={{
+                    background: "transparent",
+                    color: "var(--text-primary)",
+                  }}
                   controls={true}
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-secondary)" }}>
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest ml-1"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Padding Spacing (Gutter)
               </span>
-              <div 
+              <div
                 className="flex items-center gap-3 p-2 rounded-xl border"
                 style={{
                   background: "var(--bg-card)",
                   borderColor: "var(--border-color)",
                 }}
               >
-                <div 
-                  className="w-4 h-4 border-2 border-dashed rounded" 
+                <div
+                  className="w-4 h-4 border-2 border-dashed rounded"
                   style={{ borderColor: "var(--border-color)" }}
                 />
                 <InputNumber
@@ -151,7 +163,10 @@ const SectionCard = ({
                   value={section.layout.gutter}
                   onChange={(v) => updateSectionLayout("gutter", v)}
                   className="w-full border-none shadow-none"
-                  style={{ background: "transparent", color: "var(--text-primary)" }}
+                  style={{
+                    background: "transparent",
+                    color: "var(--text-primary)",
+                  }}
                 />
               </div>
             </div>

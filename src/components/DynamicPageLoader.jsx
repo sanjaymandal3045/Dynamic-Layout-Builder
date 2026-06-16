@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import LayoutPreview from "./LayoutBuilder/LayoutPreview";
-import { useApi } from "../utilities/axiosApiCall";
-import SplashScreen from "./UI/SplashScreen";
-import ErrorScreen from "./UI/ErrorScreen";
+import { useApi } from "../services/axiosClient";
+import SplashScreen from "./ui/SplashScreen";
+import ErrorScreen from "./ui/ErrorScreen";
 
 const DynamicPageLoader = ({ pageKey }) => {
   const [config, setConfig] = useState(null);

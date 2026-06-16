@@ -9,7 +9,7 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { BUTTON_VARIANTS, FIELD_TYPES } from "../../utilities/constants";
+import { BUTTON_VARIANTS, FIELD_TYPES } from "../../utils/constants";
 import {
   ApiCommonFields,
   FieldMappingsList,
@@ -18,7 +18,6 @@ import {
   ViewDetailsConfigBuilder,
 } from "./ConfigDrawerComponents";
 
-// ─────────────────────────────────────────────────────────────────────────────
 const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
   const [formData, setFormData] = useState(component || {});
   const [errors, setErrors] = useState({});
@@ -29,7 +28,6 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
 
   if (!component) return null;
 
-  // ── Validation ─────────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
 
@@ -73,15 +71,17 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
         e.columns = "At least one column is required";
 
       const mode = formData.dataSourceMode || "api";
-      if (mode === "api") {
-        // Own API mode — require dataUrl + tableApiCommon
+      if (mode === "api" || mode === "mixed") {
+        // Own API mode require dataUrl + tableApiCommon
         if (!formData.dataUrl) e.dataUrl = "Data API URL is required";
         if (!formData.tableApiCommon?.subChannelId)
           e.subChannelId = "Sub Channel ID is required";
         if (!formData.tableApiCommon?.subServiceId)
           e.subServiceId = "Sub Service ID is required";
-      } else {
-        // External mode — require dataSourceButtonName
+      }
+
+      if (mode === "external" || mode === "mixed") {
+        // External mode require dataSourceButtonName
         if (!formData.dataSourceButtonName)
           e.dataSourceButtonName =
             "Source Button Name is required for external data binding";
@@ -92,7 +92,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
     return Object.keys(e).length === 0;
   };
 
-  // ── Save ───────────────────────────────────────────────────────────────────
+  // Save
   const handleSave = () => {
     if (!validate()) return;
     const cleanData = { ...formData };
@@ -109,7 +109,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
     setErrors({});
   };
 
-  // ── State helpers ──────────────────────────────────────────────────────────
+  //  State helpers
   const updateField = (key, value) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
 
@@ -189,7 +189,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
       },
     }));
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // Render
   return (
     <Drawer
       title={`Configure ${component.type}`}
@@ -198,7 +198,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
       width={500}
     >
       <div className="flex flex-col gap-4">
-        {/* ══════════════════════════════════ FIELD ══════════════════════════ */}
+        {/*  FIELD  */}
         {component.type === "field" && (
           <>
             <FormField label="Field Name" required error={errors.name}>
@@ -271,7 +271,10 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                 </div>
                 <Checkbox
                   checked={formData.onlyPositive}
-                  onChange={(e) => updateField("onlyPositive", e.target.checked)}
+                  onChange={(e) =>
+                    updateField("onlyPositive", e.target.checked)
+                  }
+                  className="text-xs text-slate-600"
                 >
                   Only Positive Numbers
                 </Checkbox>
@@ -327,6 +330,20 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                   />
                 </FormField>
 
+                <FormField
+                  label="Response Data Path (Optional)"
+                  hint="e.g. data.attributes.response. Leave empty to search the entire response."
+                >
+                  <Input
+                    value={formData.onBlurApi?.responsePath || ""}
+                    onChange={(e) =>
+                      patchOnBlurApi({ responsePath: e.target.value })
+                    }
+                    placeholder="data.attributes..."
+                    size="large"
+                  />
+                </FormField>
+
                 <ApiCommonFields
                   required
                   channelValue={formData.onBlurApi?.apiCommon?.subChannelId}
@@ -358,7 +375,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </>
         )}
 
-        {/* ══════════════════════════════════ TEXT ═══════════════════════════ */}
+        {/*  TEXT  */}
         {component.type === "text" && (
           <>
             <FormField label="Content">
@@ -397,7 +414,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </>
         )}
 
-        {/* ══════════════════════════════════ BUTTON ═════════════════════════ */}
+        {/* BUTTON */}
         {component.type === "button" && (
           <>
             <FormField
@@ -465,7 +482,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
               </div>
             )}
 
-            {/* API config — hidden for reset action */}
+            {/* API config hidden for reset action */}
             {formData.onClick !== "reset" && (
               <>
                 <Divider />
@@ -600,7 +617,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
 
             <Divider />
 
-            {/* ── Filter Search Panel ─────────────────────────── */}
+            {/* Filter Search Panel */}
             <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -653,7 +670,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </>
         )}
 
-        {/* ══════════════════════════════════ CARD ═══════════════════════════ */}
+        {/* CARD */}
         {component.type === "card" && (
           <>
             <FormField label="Card Title">
@@ -673,7 +690,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </>
         )}
 
-        {/* ══════════════════════════════════ SPACER ═════════════════════════ */}
+        {/*  SPACER  */}
         {component.type === "spacer" && (
           <FormField label="Height (px)">
             <InputNumber
@@ -687,7 +704,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </FormField>
         )}
 
-        {/* ══════════════════════════════════ DIVIDER ════════════════════════ */}
+        {/*  DIVIDER  */}
         {component.type === "divider" && (
           <>
             <FormField
@@ -743,7 +760,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </>
         )}
 
-        {/* ══════════════════════════════════ CHECKBOX ════════════════════════ */}
+        {/*  CHECKBOX */}
         {component.type === "checkbox" && (
           <>
             <FormField
@@ -873,10 +890,14 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
             )}
           </>
         )}
-        {/* ══════════════════════════════════ UPLOAD ══════════════════════════ */}
+        {/* UPLOAD  */}
         {component.type === "upload" && (
           <>
-            <FormField label="Field Name (binding key)" required error={errors.name}>
+            <FormField
+              label="Field Name (binding key)"
+              required
+              error={errors.name}
+            >
               <Input
                 status={errors.name ? "error" : ""}
                 value={formData.name}
@@ -937,7 +958,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </>
         )}
 
-        {/* ══════════════════════════════════ SELECT ═════════════════════════ */}
+        {/* SELECT  */}
         {formData.type === "select" && (
           <>
             <FormField label="Select Name">
@@ -996,7 +1017,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                       const parsed = JSON.parse(text);
                       if (Array.isArray(parsed)) updateField("options", parsed);
                     } catch {
-                      // keep typing — silent fail
+                      // keep typing silent fail
                     }
                   }}
                   style={{ fontFamily: "monospace", fontSize: 12 }}
@@ -1014,7 +1035,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                   <code className="bg-blue-100 px-1 rounded">
                     data.attributes.dropdownValues
                   </code>{" "}
-                  — an array of{" "}
+                  an array of{" "}
                   <code className="bg-blue-100 px-1 rounded">{`{ label, value }`}</code>{" "}
                   objects.
                 </p>
@@ -1076,7 +1097,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
           </>
         )}
 
-        {/* ══════════════════════════════════ TABLE ══════════════════════════ */}
+        {/*  TABLE */}
         {component.type === "table" && (
           <>
             <FormField
@@ -1121,10 +1142,19 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                   popupMatchSelectWidth={false}
                   value={formData.dataSourceMode || "api"}
                   options={[
-                    { value: "api", label: "Own API — Table fetches its own data" },
+                    {
+                      value: "api",
+                      label: "Own API Table fetches its own data",
+                    },
                     {
                       value: "external",
-                      label: "External Button/Filter — Receives data from a button's API response",
+                      label:
+                        "External Button/Filter Receives data from a button's API response",
+                    },
+                    {
+                      value: "mixed",
+                      label:
+                        "Mixed Own API on load, override with Button filter data",
                     },
                   ]}
                   onChange={(v) => {
@@ -1133,7 +1163,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                     if (v === "external") {
                       updateField("dataUrl", undefined);
                       updateField("tableApiCommon", undefined);
-                    } else {
+                    } else if (v === "api") {
                       updateField("dataSourceButtonName", undefined);
                     }
                   }}
@@ -1143,7 +1173,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
               </FormField>
 
               {/* Own API Mode */}
-              {(formData.dataSourceMode || "api") === "api" && (
+              {(formData.dataSourceMode || "api") !== "external" && (
                 <>
                   <FormField
                     label="Data API URL"
@@ -1180,7 +1210,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
               )}
 
               {/* External Button/Filter Mode */}
-              {formData.dataSourceMode === "external" && (
+              {(formData.dataSourceMode || "api") !== "api" && (
                 <>
                   <FormField
                     label="Source Button Name"
@@ -1293,7 +1323,7 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-slate-600">
-                          Form Field Name (optional — for row action mapping)
+                          Form Field Name (optional for row action mapping)
                         </label>
                         <Input
                           size="small"
@@ -1475,9 +1505,8 @@ const ComponentConfigDrawer = ({ open, onClose, component, onSave }) => {
                 />
                 {formData.rowActions?.viewDetailsConfig?.tabs?.length > 0 && (
                   <p className="text-[10px] text-green-600 mt-1 font-semibold">
-                    ✓ Valid —{" "}
-                    {formData.rowActions.viewDetailsConfig.tabs.length} tab(s)
-                    detected
+                    Valid {formData.rowActions.viewDetailsConfig.tabs.length}{" "}
+                    tab(s) detected
                   </p>
                 )}
                 <Divider />

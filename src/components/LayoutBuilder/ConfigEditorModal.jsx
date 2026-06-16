@@ -13,7 +13,7 @@ import {
 import { SearchOutlined, SaveOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { setConfig } from "../../redux/slices/layoutSlice";
-import { useApi } from "../../utilities/axiosApiCall";
+import { useApi } from "../../services/axiosClient";
 import LayoutBuilder from "./LayoutBuilder";
 import JSONModal from "./JSONModal";
 
@@ -174,7 +174,7 @@ const ConfigEditorModal = ({ open, onClose }) => {
             {/* Quick Reference */}
             <div
               style={{
-                background: "#f6f8fb",
+                background: "#var(--bg-app)",
                 border: "1px solid #d9e8f5",
                 borderRadius: "8px",
                 padding: "12px 16px",
@@ -191,7 +191,7 @@ const ConfigEditorModal = ({ open, onClose }) => {
             {/* Loaded Config Info */}
             <div
               style={{
-                background: "#f0f9ff",
+                background: "#var(--bg-app)",
                 border: "1px solid #b3e5fc",
                 borderRadius: "8px",
                 padding: "12px 16px",
@@ -212,6 +212,7 @@ const ConfigEditorModal = ({ open, onClose }) => {
               </div>
               <Button
                 type="link"
+                style={{color:"var(--text-primary)", border: "1px solid #b3e5fc",}}
                 onClick={() => {
                   setConfigLoaded(false);
                   setPageKeyInput("");
